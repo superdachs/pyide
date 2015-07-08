@@ -3,8 +3,54 @@
 from gi.repository import Gtk, Gdk, GtkSource, GObject
 
 class Handler:
+
+    def onCopy(self, *args):
+        buffer = app.builder.get_object("gtksourceview1").get_buffer()
+        buffer.copy_clipboard(app.clipboard)
+
+    def onCut(self, *args):
+        buffer = app.builder.get_object("gtksourceview1").get_buffer()
+        buffer.cut_clipboard(app.clipboard, True)
+
+    def onPaste(self, *args):
+        buffer = app.builder.get_object("gtksourceview1").get_buffer()
+        buffer.paste_clipboard(app.clipboard, None, True)
+
+    def onModified(self, *args):
+        buffer = app.builder.get_object("gtksourceview1").get_buffer()
+        if buffer.get_modified():
+            title = app.builder.get_object("window1").get_title()
+            app.builder.get_object("window1").set_title(title + "*")
+
     def onDeleteWindow(self, *args):
-        Gtk.main_quit(*args)
+        quit = True
+        if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
+            quit = self.askForSave()
+        if quit:
+            Gtk.main_quit(*args)
+
+    def askForSave(self, *args):
+        dialog = Gtk.Dialog("ask for save dialog", app.builder.get_object("window1"), 0,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_YES, Gtk.ResponseType.YES,
+             Gtk.STOCK_NO, Gtk.ResponseType.NO))
+        dialog.get_content_area().add(Gtk.Label("Datei nicht gespeichert. Wollen Sie die datei jetzt speichern?"))
+        dialog.set_default_size(150, 100)
+        dialog.show_all()
+        response = dialog.run()
+        if response == Gtk.ResponseType.YES:
+            self.onSave(*args)
+            dialog.destroy()
+            if not app.builder.get_object("gtksourceview1").get_buffer().get_modified():
+                return True
+            else:
+                return False
+        elif response == Gtk.ResponseType.NO:
+            dialog.destroy()
+            return True
+        else:
+            dialog.destroy()
+            return False
 
     def onInfo(self, *args):
         dialog = app.builder.get_object("window2")
@@ -27,6 +73,7 @@ class Handler:
         buffer = GtkSource.Buffer()
         buffer.set_modified(False)
         app.builder.get_object("gtksourceview1").set_buffer(buffer)
+        buffer.connect("modified-changed", Handler.onModified)
 
     def onOpen(self, *args):
         dialog = Gtk.FileChooserDialog("open file", app.builder.get_object("window1"),
@@ -38,6 +85,7 @@ class Handler:
                 buffer = GtkSource.Buffer()
                 buffer.set_text(loadedfile.read())
                 buffer.set_modified(False)
+                buffer.connect("modified-changed", Handler.onModified)
                 app.filename = dialog.get_filename()
                 app.builder.get_object("gtksourceview1").set_buffer(buffer)
                 app.builder.get_object("window1").set_title(dialog.get_filename())
@@ -75,7 +123,9 @@ class Pyide:
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         GObject.type_register(GtkSource.View)
         self.builder.add_from_file("pyide.glade")
-        self.builder.get_object("gtksourceview1").set_buffer(GtkSource.Buffer())
+        buffer = GtkSource.Buffer()
+        self.builder.get_object("gtksourceview1").set_buffer(buffer)
+        buffer.connect("modified-changed", Handler.onModified)
         self.builder.connect_signals(Handler())
 
     def run(self):
