@@ -74,7 +74,13 @@ class Handler:
     def onNew(self, *args):
         buffer = GtkSource.Buffer()
         buffer.set_modified(False)
+        lanm = GtkSource.LanguageManager()
+        lan = lanm.get_language('python')
+        buffer.set_language(lan)
+        buffer.set_highlight_syntax(True)
+        buffer.set_text("#!/usr/bin/env python")
         app.builder.get_object("gtksourceview1").set_buffer(buffer)
+
         buffer.connect("modified-changed", Handler.onModified)
 
     def onOpen(self, *args):
@@ -96,6 +102,7 @@ class Handler:
                     buffer.set_language(lan)
                 else:
                     buffer.set_highlight_syntax(False)
+                print(lan.get_name())
 
                 app.filename = dialog.get_filename()
                 app.builder.get_object("gtksourceview1").set_buffer(buffer)
@@ -145,12 +152,22 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
         buffer = GtkSource.Buffer()
         self.builder.get_object("gtksourceview1").set_buffer(buffer)
+
+        lanm = GtkSource.LanguageManager()
+        lan = lanm.get_language('python')
+        buffer.set_language(lan)
+        buffer.set_highlight_syntax(True)
+        buffer.set_text("#!/usr/bin/env python")
+
+        buffer = self.builder.get_object("gtksourceview1").get_buffer()
+
         buffer.connect("modified-changed", Handler.onModified)
         self.builder.connect_signals(Handler())
 
     def run(self):
         window = self.builder.get_object("window1")
         window.show_all()
+
         Gtk.main()
 
 if __name__ == "__main__":
