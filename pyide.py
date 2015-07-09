@@ -28,6 +28,8 @@ class Handler:
             quit = self.askForSave()
         if quit:
             Gtk.main_quit(*args)
+        else:
+            return True
 
     def askForSave(self, *args):
         dialog = Gtk.Dialog("ask for save dialog", app.builder.get_object("window1"), 0,
