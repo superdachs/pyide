@@ -80,7 +80,7 @@ class Handler:
         buffer.set_highlight_syntax(True)
         buffer.set_text("#!/usr/bin/env python")
         app.builder.get_object("gtksourceview1").set_buffer(buffer)
-
+        buffer.set_modified(False)
         buffer.connect("modified-changed", Handler.onModified)
 
     def onOpen(self, *args):
@@ -160,7 +160,7 @@ class Pyide:
         buffer.set_text("#!/usr/bin/env python")
 
         buffer = self.builder.get_object("gtksourceview1").get_buffer()
-
+        buffer.set_modified(False)
         buffer.connect("modified-changed", Handler.onModified)
         self.builder.connect_signals(Handler())
 
