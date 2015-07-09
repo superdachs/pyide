@@ -123,6 +123,15 @@ class Handler:
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
             app.filename = filename
             buffer.set_modified(False)
+            # syntax highlighting
+            lman = GtkSource.LanguageManager()
+            lan = lman.guess_language(filename)
+            if lan:
+                buffer.set_highlight_syntax(True)
+                buffer.set_language(lan)
+            else:
+                buffer.set_highlight_syntax(False)
+
             window = app.builder.get_object("window1").set_title(filename)
 
 class Pyide:
