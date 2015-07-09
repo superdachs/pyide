@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Gdk, GtkSource, GObject
+from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib
+import os
 
 class Handler:
 
@@ -141,6 +142,37 @@ class Handler:
 
             window = app.builder.get_object("window1").set_title(filename)
 
+    def onRunApp(self, *args):
+
+        print(app.builder.get_object("gtksourceview1").get_buffer().get_modified())
+
+        if app.filename == "":
+            self.onSave()
+        if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
+            self.onSave()
+
+        termwin = Gtk.Window()
+        termwin.set_default_size(800, 600)
+        termwin.connect("delete-event", lambda win,evt: win.destroy())
+
+        terminal = Vte.Terminal()
+        terminal.spawn_sync(
+            Vte.PtyFlags.DEFAULT,
+            os.environ['HOME'],
+            ["/bin/bash"],
+            [],
+            GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+            None,
+            None,
+            )
+        termwin.add(terminal)
+        termwin.show_all()
+        cmd = "python " + app.filename + "\n"
+        terminal.feed_child(cmd, len(cmd))
+
+
+
+
 class Pyide:
 
     filename = ""
@@ -167,7 +199,6 @@ class Pyide:
     def run(self):
         window = self.builder.get_object("window1")
         window.show_all()
-
         Gtk.main()
 
 if __name__ == "__main__":
