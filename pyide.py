@@ -62,7 +62,6 @@ class Handler:
         dialog.show_all()
 
     def onInfoOk(sel, *args):
-        print("hide")
         app.builder.get_object("window2").hide()
 
     def onFullscreen(self, *args):
@@ -104,8 +103,7 @@ class Handler:
                     buffer.set_language(lan)
                 else:
                     buffer.set_highlight_syntax(False)
-                print(lan.get_name())
-
+                
                 app.filename = dialog.get_filename()
                 app.builder.get_object("gtksourceview1").set_buffer(buffer)
                 app.builder.get_object("window1").set_title(dialog.get_filename())
@@ -145,15 +143,10 @@ class Handler:
 
     def onRunApp(self, *args):
 
-        print(app.builder.get_object("gtksourceview1").get_buffer().get_modified())
-
-        mod = app.builder.get_object("gtksourceview1").get_buffer().get_modified()
-        of = app.filename
         f = "/tmp/%i.py" % int(time.time())
-        self.save(f)
-        app.builder.get_object("gtksourceview1").get_buffer().set_modified(mod)
-        app.filename = of
-
+        with open (f, "w") as loadedfile:
+            buffer = app.builder.get_object("gtksourceview1").get_buffer()
+            loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
 
         termwin = Gtk.Window()
         termwin.set_default_size(800, 600)
