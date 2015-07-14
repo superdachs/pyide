@@ -2,6 +2,7 @@
 
 from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib
 import os
+import time
 
 class Handler:
 
@@ -146,14 +147,22 @@ class Handler:
 
         print(app.builder.get_object("gtksourceview1").get_buffer().get_modified())
 
-        if app.filename == "":
-            self.onSave()
-        if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
-            self.onSave()
+        mod = app.builder.get_object("gtksourceview1").get_buffer().get_modified()
+        of = app.filename
+        f = "/tmp/%i.py" % int(time.time())
+        self.save(f)
+        app.builder.get_object("gtksourceview1").get_buffer().set_modified(mod)
+        app.filename = of
+
 
         termwin = Gtk.Window()
         termwin.set_default_size(800, 600)
-        termwin.connect("delete-event", lambda win,evt: win.destroy())
+
+        def closeTerm(win, evt):
+            win.destroy()
+            os.remove(f)
+
+        termwin.connect("delete-event", closeTerm)
 
         terminal = Vte.Terminal()
         terminal.spawn_sync(
@@ -167,7 +176,7 @@ class Handler:
             )
         termwin.add(terminal)
         termwin.show_all()
-        cmd = "python " + app.filename + "\n"
+        cmd = "python " + f + "\n"
         terminal.feed_child(cmd, len(cmd))
 
 
