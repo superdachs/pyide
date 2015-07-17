@@ -172,9 +172,6 @@ class Handler:
         cmd = "python " + f + "\n"
         terminal.feed_child(cmd, len(cmd))
 
-
-
-
 class Pyide:
 
     filename = ""
@@ -186,6 +183,27 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
         buffer = GtkSource.Buffer()
         self.builder.get_object("gtksourceview1").set_buffer(buffer)
+
+
+        # tree store testing
+
+        fsStore = Gtk.TreeStore(str)
+
+        projectfilescolumn = Gtk.TreeViewColumn()
+        projectfilescolumn.set_title("Project Name")
+
+        projectfilescell = Gtk.CellRendererText()
+        projectfilescolumn.pack_start(projectfilescell, True)
+        projectfilescolumn.add_attribute(projectfilescell, "text", 0)
+
+        iterator = fsStore.append(None, ["Folder1"])
+        fsStore.append(iterator, ["File1"])
+        fsStore.append(iterator, ["File2"])
+
+        self.builder.get_object("treeview1").append_column(projectfilescolumn)
+        self.builder.get_object("treeview1").set_model(fsStore)
+
+        # end tree store testing
 
         lanm = GtkSource.LanguageManager()
         lan = lanm.get_language('python')
