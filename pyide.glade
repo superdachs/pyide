@@ -6,8 +6,8 @@
   <object class="GtkWindow" id="window1">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">PyIDE</property>
-    <property name="default_width">800</property>
-    <property name="default_height">600</property>
+    <property name="default_width">1280</property>
+    <property name="default_height">800</property>
     <property name="hide_titlebar_when_maximized">True</property>
     <property name="has_resize_grip">True</property>
     <signal name="delete-event" handler="onDeleteWindow" swapped="no"/>
@@ -275,27 +275,51 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow" id="scrolledwindow1">
+          <object class="GtkPaned" id="paned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="shadow_type">in</property>
+            <property name="wide_handle">True</property>
             <child>
-              <object class="GtkSourceView" id="gtksourceview1">
+              <object class="GtkTreeView" id="treeview4">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="pixels_below_lines">6</property>
-                <property name="left_margin">2</property>
-                <property name="right_margin">2</property>
-                <property name="monospace">True</property>
-                <property name="show_line_numbers">True</property>
-                <property name="show_line_marks">True</property>
-                <property name="tab_width">4</property>
-                <property name="indent_width">4</property>
-                <property name="auto_indent">True</property>
-                <property name="insert_spaces_instead_of_tabs">True</property>
-                <property name="show_right_margin">True</property>
-                <property name="highlight_current_line">True</property>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection" id="treeview-selection4"/>
+                </child>
               </object>
+              <packing>
+                <property name="resize">False</property>
+                <property name="shrink">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow" id="scrolledwindow1">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkSourceView" id="gtksourceview1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="pixels_below_lines">6</property>
+                    <property name="left_margin">2</property>
+                    <property name="right_margin">2</property>
+                    <property name="monospace">True</property>
+                    <property name="show_line_numbers">True</property>
+                    <property name="show_line_marks">True</property>
+                    <property name="tab_width">4</property>
+                    <property name="indent_width">4</property>
+                    <property name="auto_indent">True</property>
+                    <property name="insert_spaces_instead_of_tabs">True</property>
+                    <property name="show_right_margin">True</property>
+                    <property name="highlight_current_line">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
             </child>
           </object>
           <packing>

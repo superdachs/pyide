@@ -103,7 +103,7 @@ class Handler:
                     buffer.set_language(lan)
                 else:
                     buffer.set_highlight_syntax(False)
-                
+
                 app.filename = dialog.get_filename()
                 app.builder.get_object("gtksourceview1").set_buffer(buffer)
                 app.builder.get_object("window1").set_title(dialog.get_filename())
