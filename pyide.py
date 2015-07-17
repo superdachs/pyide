@@ -172,6 +172,23 @@ class Handler:
         cmd = "python " + f + "\n"
         terminal.feed_child(cmd, len(cmd))
 
+    def populateProjectFilesStore(self, path, name):
+        fsStore = Gtk.TreeStore(str)
+
+        projectfilescolumn = Gtk.TreeViewColumn()
+        projectfilescolumn.set_title(name)
+
+        projectfilescell = Gtk.CellRendererText()
+        projectfilescolumn.pack_start(projectfilescell, True)
+        projectfilescolumn.add_attribute(projectfilescell, "text", 0)
+
+        iterator = fsStore.append(None, ["Folder1"])
+        fsStore.append(iterator, ["File1"])
+        fsStore.append(iterator, ["File2"])
+
+        self.builder.get_object("treeview1").append_column(projectfilescolumn)
+        self.builder.get_object("treeview1").set_model(fsStore)
+
 class Pyide:
 
     filename = ""
@@ -187,21 +204,7 @@ class Pyide:
 
         # tree store testing
 
-        fsStore = Gtk.TreeStore(str)
-
-        projectfilescolumn = Gtk.TreeViewColumn()
-        projectfilescolumn.set_title("Project Name")
-
-        projectfilescell = Gtk.CellRendererText()
-        projectfilescolumn.pack_start(projectfilescell, True)
-        projectfilescolumn.add_attribute(projectfilescell, "text", 0)
-
-        iterator = fsStore.append(None, ["Folder1"])
-        fsStore.append(iterator, ["File1"])
-        fsStore.append(iterator, ["File2"])
-
-        self.builder.get_object("treeview1").append_column(projectfilescolumn)
-        self.builder.get_object("treeview1").set_model(fsStore)
+        Handler.populateProjectFilesStore(self, "/", "projectname")
 
         # end tree store testing
 
