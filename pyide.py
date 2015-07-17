@@ -91,24 +91,27 @@ class Handler:
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            with open (dialog.get_filename(), "r") as loadedfile:
-                buffer = GtkSource.Buffer()
-                buffer.set_text(loadedfile.read())
-                buffer.set_modified(False)
-                buffer.connect("modified-changed", Handler.onModified)
-                # syntax highlighting
-                lman = GtkSource.LanguageManager()
-                lan = lman.guess_language(dialog.get_filename())
-                if lan:
-                    buffer.set_highlight_syntax(True)
-                    buffer.set_language(lan)
-                else:
-                    buffer.set_highlight_syntax(False)
-
-                app.filename = dialog.get_filename()
-                app.builder.get_object("gtksourceview1").set_buffer(buffer)
-                app.builder.get_object("window1").set_title(dialog.get_filename())
+            openfile(dialog.get_filename())
         dialog.destroy()
+
+    def openfile(path):
+        with open (path, "r") as loadedfile:
+            buffer = GtkSource.Buffer()
+            buffer.set_text(loadedfile.read())
+            buffer.set_modified(False)
+            buffer.connect("modified-changed", Handler.onModified)
+            # syntax highlighting
+            lman = GtkSource.LanguageManager()
+            lan = lman.guess_language(dialog.get_filename())
+            if lan:
+                buffer.set_highlight_syntax(True)
+                buffer.set_language(lan)
+            else:
+                buffer.set_highlight_syntax(False)
+
+            app.filename = dialog.get_filename()
+            app.builder.get_object("gtksourceview1").set_buffer(buffer)
+            app.builder.get_object("window1").set_title(dialog.get_filename())
 
     def onSaveAs(self, *args):
         dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
@@ -206,6 +209,7 @@ class Handler:
         # get the associated model
         treeStore = treeView.get_model()
         # get the full path of the position
+        print(treeIter)
         newPath = treeStore.get_value(treeIter, 2)
         # populate the subtree on curent position
         Handler.populateFileSystemTreeStore(treeStore, newPath, treeIter)
@@ -226,6 +230,19 @@ class Handler:
         # append dummy node
         treeStore.append(treeIter, [None, None, None])
 
+    def onFSRowActivated(treeView, treeIter, treePath):
+
+        #TODO: change signal arguments:
+        # https://en.wikibooks.org/wiki/GTK%2B_By_Example/Tree_View/Events
+
+        model = treeView.get_model()
+        print(treePath)
+        # path = model.get_value(treeIter, 2)
+        # print(path)
+        # if os.isdir(path):
+        #     onFSRowCollapsed(treeView, treeIter, treePath)
+        # else:
+        #     openfile(path)
 
 class Pyide:
     filename = ""
@@ -276,6 +293,8 @@ class Pyide:
         fileSystemTreeView.connect("row-expanded", Handler.onFSRowExpanded)
         # add "on collapse" callback
         fileSystemTreeView.connect("row-collapsed", Handler.onFSRowCollapsed)
+        # activate callback
+        fileSystemTreeView.connect("row-activated", Handler.onFSRowActivated)
 
         # end tree store testing
 
