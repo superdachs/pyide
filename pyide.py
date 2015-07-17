@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib
-import os
-import time
+from gi.repository.GdkPixbuf import Pixbuf
+import os, stat, time
+
 
 class Handler:
 
@@ -172,26 +173,67 @@ class Handler:
         cmd = "python " + f + "\n"
         terminal.feed_child(cmd, len(cmd))
 
-    def populateProjectFilesStore(self, path, name):
-        fsStore = Gtk.TreeStore(str)
+    def populateFileSystemTreeStore(treeStore, path, parent=None):
+        itemCounter = 0
+        # iterate over the items in the path
+        for item in os.listdir(path):
+            # Get the absolute path of the item
+            itemFullname = os.path.join(path, item)
+            # Extract metadata from the item
+            try:
+                itemMetaData = os.stat(itemFullname)
+            except:
+                pass
+            # Determine if the item is a folder
+            itemIsFolder = stat.S_ISDIR(itemMetaData.st_mode)
+            # Generate an icon from the default icon theme
+            itemIcon = Gtk.IconTheme.get_default().load_icon("folder" if itemIsFolder else "empty", 22, 0)
+            # Append the item to the TreeStore
+            currentIter = treeStore.append(parent, [item, itemIcon, itemFullname])
+            # add dummy if current item was a folder
+            if itemIsFolder:
+                try:
+                    if not os.listdir(itemFullname) == [] :
+                        treeStore.append(currentIter, [None, None, None])
+                except:
+                    pass
+            #increment the item counter
+            itemCounter += 1
+        # add the dummy node back if nothing was inserted before
+        if itemCounter < 1: treeStore.append(parent, [None, None, None])
 
-        projectfilescolumn = Gtk.TreeViewColumn()
-        projectfilescolumn.set_title(name)
+    def onFSRowExpanded(treeView, treeIter, treePath):
+        # get the associated model
+        treeStore = treeView.get_model()
+        # get the full path of the position
+        newPath = treeStore.get_value(treeIter, 2)
+        # populate the subtree on curent position
+        Handler.populateFileSystemTreeStore(treeStore, newPath, treeIter)
+        # remove the first child (dummy node)
+        treeStore.remove(treeStore.iter_children(treeIter))
 
-        projectfilescell = Gtk.CellRendererText()
-        projectfilescolumn.pack_start(projectfilescell, True)
-        projectfilescolumn.add_attribute(projectfilescell, "text", 0)
+    def onFSRowCollapsed(treeView, treeIter, treePath):
+        # get the associated model
+        treeStore = treeView.get_model()
+        # get the iterator of the first child
+        currentChildIter = treeStore.iter_children(treeIter)
+        # loop as long as some childern exist
+        while currentChildIter:
+            # remove the first child
+            treeStore.remove(currentChildIter)
+            # refresh the iterator of the next child
+            currentChildIter = treeStore.iter_children(treeIter)
+        # append dummy node
+        treeStore.append(treeIter, [None, None, None])
 
-        iterator = fsStore.append(None, ["Folder1"])
-        fsStore.append(iterator, ["File1"])
-        fsStore.append(iterator, ["File2"])
-
-        self.builder.get_object("treeview1").append_column(projectfilescolumn)
-        self.builder.get_object("treeview1").set_model(fsStore)
 
 class Pyide:
-
     filename = ""
+
+    # fs tree store from http://stackoverflow.com/questions/23433819/creating-a-simple-file-browser-using-python-and-gtktreeview
+
+
+
 
     def __init__(self, *args):
         self.builder = Gtk.Builder()
@@ -204,7 +246,36 @@ class Pyide:
 
         # tree store testing
 
-        Handler.populateProjectFilesStore(self, "/", "projectname")
+        # initialize the filesystem treestore
+        fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
+        # populate the tree store
+        Handler.populateFileSystemTreeStore(fileSystemTreeStore, '/home/superdachs')
+
+
+
+        # initialize the TreeView
+        fileSystemTreeView = self.builder.get_object("treeview1")
+        fileSystemTreeView.set_model(fileSystemTreeStore)
+
+        # Create a TreeViewColumn
+        treeViewCol = Gtk.TreeViewColumn("File")
+        # Create a column cell to display text
+        colCellText = Gtk.CellRendererText()
+        # Create a column cell to display an image
+        colCellImg = Gtk.CellRendererPixbuf()
+        # Add the cells to the column
+        treeViewCol.pack_start(colCellImg, False)
+        treeViewCol.pack_start(colCellText, True)
+        # Bind the text cell to column 0 of the tree's model
+        treeViewCol.add_attribute(colCellText, "text", 0)
+        # Bind the image cell to column 1 of the tree's model
+        treeViewCol.add_attribute(colCellImg, "pixbuf", 1)
+        # Append the columns to the TreeView
+        fileSystemTreeView.append_column(treeViewCol)
+        # add "on expand" callback
+        fileSystemTreeView.connect("row-expanded", Handler.onFSRowExpanded)
+        # add "on collapse" callback
+        fileSystemTreeView.connect("row-collapsed", Handler.onFSRowCollapsed)
 
         # end tree store testing
 
