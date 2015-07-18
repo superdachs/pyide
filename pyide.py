@@ -102,16 +102,16 @@ class Handler:
             buffer.connect("modified-changed", Handler.onModified)
             # syntax highlighting
             lman = GtkSource.LanguageManager()
-            lan = lman.guess_language(dialog.get_filename())
+            lan = lman.guess_language(path)
             if lan:
                 buffer.set_highlight_syntax(True)
                 buffer.set_language(lan)
             else:
                 buffer.set_highlight_syntax(False)
 
-            app.filename = dialog.get_filename()
+            app.filename = path
             app.builder.get_object("gtksourceview1").set_buffer(buffer)
-            app.builder.get_object("window1").set_title(dialog.get_filename())
+            app.builder.get_object("window1").set_title(path)
 
     def onSaveAs(self, *args):
         dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
@@ -230,19 +230,18 @@ class Handler:
         # append dummy node
         treeStore.append(treeIter, [None, None, None])
 
-    def onFSRowActivated(treeView, treeIter, treePath):
+    def onFSRowActivated(treeView, path, column):
 
         #TODO: change signal arguments:
         # https://en.wikibooks.org/wiki/GTK%2B_By_Example/Tree_View/Events
 
         model = treeView.get_model()
-        print(treePath)
-        # path = model.get_value(treeIter, 2)
-        # print(path)
-        # if os.isdir(path):
-        #     onFSRowCollapsed(treeView, treeIter, treePath)
-        # else:
-        #     openfile(path)
+        curiter = model.get_iter(path)
+        fspath = model.get_value(curiter, 2)
+        print(fspath)
+        print(os.path.isdir(fspath))
+        if not os.path.isdir(str(fspath)):
+            Handler.openfile(str(fspath))
 
 class Pyide:
     filename = ""
