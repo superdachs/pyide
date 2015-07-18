@@ -26,13 +26,14 @@ class Handler:
             app.builder.get_object("window1").set_title(title + "*")
 
     def onDeleteWindow(self, *args):
-        quit = True
-        if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
-            quit = self.askForSave()
-        if quit:
-            Gtk.main_quit(*args)
-        else:
-            return True
+        Gtk.main_quit(*args)
+        # quit = True
+        # if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
+        #     quit = self.askForSave()
+        # if quit:
+        #     Gtk.main_quit(*args)
+        # else:
+        #     return True
 
     def askForSave(self, *args):
         dialog = Gtk.Dialog("ask for save dialog", app.builder.get_object("window1"), 0,
@@ -95,6 +96,9 @@ class Handler:
         dialog.destroy()
 
     def openfile(path):
+        for of in app.openfiles:
+            if path in of[0]:
+                return
         with open (path, "r") as loadedfile:
             buffer = GtkSource.Buffer()
             buffer.set_text(loadedfile.read())
@@ -109,8 +113,23 @@ class Handler:
             else:
                 buffer.set_highlight_syntax(False)
 
+            sview = GtkSource.View()
+            sview.set_buffer(buffer)
+            swindow = Gtk.ScrolledWindow()
+            swindow.add(sview)
+            slabel = Gtk.Label()
+            slabel.set_text(path)
+            notebook = app.builder.get_object("notebook1")
+            pos = notebook.append_page(swindow, slabel)
+            notebook.show_all()
+
+            app.openfiles.append([path, sview, slabel, pos])
+
+            print(app.openfiles)
+
+            #TODO: remove
             app.filename = path
-            app.builder.get_object("gtksourceview1").set_buffer(buffer)
+
             app.builder.get_object("window1").set_title(path)
 
     def onSaveAs(self, *args):
@@ -239,68 +258,35 @@ class Handler:
             Handler.openfile(str(fspath))
 
 class Pyide:
+
+    openfiles = []
+
     filename = ""
 
     # fs tree store from http://stackoverflow.com/questions/23433819/creating-a-simple-file-browser-using-python-and-gtktreeview
-
-
-
 
     def __init__(self, *args):
         self.builder = Gtk.Builder()
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         GObject.type_register(GtkSource.View)
         self.builder.add_from_file("pyide.glade")
-        buffer = GtkSource.Buffer()
-        self.builder.get_object("gtksourceview1").set_buffer(buffer)
 
-
-        # tree store testing
-
-        # initialize the filesystem treestore
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
-        # populate the tree store
         Handler.populateFileSystemTreeStore(fileSystemTreeStore, '/home/superdachs')
-
-
-
-        # initialize the TreeView
         fileSystemTreeView = self.builder.get_object("treeview1")
         fileSystemTreeView.set_model(fileSystemTreeStore)
-
-        # Create a TreeViewColumn
         treeViewCol = Gtk.TreeViewColumn("File")
-        # Create a column cell to display text
         colCellText = Gtk.CellRendererText()
-        # Create a column cell to display an image
         colCellImg = Gtk.CellRendererPixbuf()
-        # Add the cells to the column
         treeViewCol.pack_start(colCellImg, False)
         treeViewCol.pack_start(colCellText, True)
-        # Bind the text cell to column 0 of the tree's model
         treeViewCol.add_attribute(colCellText, "text", 0)
-        # Bind the image cell to column 1 of the tree's model
         treeViewCol.add_attribute(colCellImg, "pixbuf", 1)
-        # Append the columns to the TreeView
         fileSystemTreeView.append_column(treeViewCol)
-        # add "on expand" callback
         fileSystemTreeView.connect("row-expanded", Handler.onFSRowExpanded)
-        # add "on collapse" callback
         fileSystemTreeView.connect("row-collapsed", Handler.onFSRowCollapsed)
-        # activate callback
         fileSystemTreeView.connect("row-activated", Handler.onFSRowActivated)
 
-        # end tree store testing
-
-        lanm = GtkSource.LanguageManager()
-        lan = lanm.get_language('python')
-        buffer.set_language(lan)
-        buffer.set_highlight_syntax(True)
-        buffer.set_text("#!/usr/bin/env python")
-
-        buffer = self.builder.get_object("gtksourceview1").get_buffer()
-        buffer.set_modified(False)
-        buffer.connect("modified-changed", Handler.onModified)
         self.builder.connect_signals(Handler())
 
     def run(self):
