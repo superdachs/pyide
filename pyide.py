@@ -232,14 +232,9 @@ class Handler:
 
     def onFSRowActivated(treeView, path, column):
 
-        #TODO: change signal arguments:
-        # https://en.wikibooks.org/wiki/GTK%2B_By_Example/Tree_View/Events
-
         model = treeView.get_model()
         curiter = model.get_iter(path)
         fspath = model.get_value(curiter, 2)
-        print(fspath)
-        print(os.path.isdir(fspath))
         if not os.path.isdir(str(fspath)):
             Handler.openfile(str(fspath))
 
