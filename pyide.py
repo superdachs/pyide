@@ -113,17 +113,28 @@ class Handler:
             else:
                 buffer.set_highlight_syntax(False)
 
+            hbox = Gtk.HBox(False, 0)
+            label = Gtk.Label(path)
+            hbox.pack_start(label, True, True, 0)
+            close_image = Gtk.IconTheme.get_default().load_icon("exit", 16, 0)
+            imgw = Gtk.Image()
+            imgw.set_from_pixbuf(close_image)
+            btn = Gtk.Button()
+            btn.set_focus_on_click(False)
+            btn.add(imgw)
+            btn.connect("clicked", Handler.onCloseTab)
+            hbox.pack_start(btn, False, False, 0)
+            hbox.show_all()
+
             sview = GtkSource.View()
             sview.set_buffer(buffer)
             swindow = Gtk.ScrolledWindow()
             swindow.add(sview)
-            slabel = Gtk.Label()
-            slabel.set_text(path)
             notebook = app.builder.get_object("notebook1")
-            pos = notebook.append_page(swindow, slabel)
+            pos = notebook.append_page(swindow, hbox)
             notebook.show_all()
 
-            app.openfiles.append([path, sview, slabel, pos])
+            app.openfiles.append([path, buffer, pos])
 
             print(app.openfiles)
 
@@ -131,6 +142,9 @@ class Handler:
             app.filename = path
 
             app.builder.get_object("window1").set_title(path)
+
+    def onCloseTab(self, *args):
+        print("TODO: Handle close of tab")
 
     def onSaveAs(self, *args):
         dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
