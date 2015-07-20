@@ -122,7 +122,6 @@ class Handler:
             btn = Gtk.Button()
             btn.set_focus_on_click(False)
             btn.add(imgw)
-            btn.connect("clicked", Handler.onCloseTab)
             hbox.pack_start(btn, False, False, 0)
             hbox.show_all()
 
@@ -133,6 +132,7 @@ class Handler:
             notebook = app.builder.get_object("notebook1")
             pos = notebook.append_page(swindow, hbox)
             notebook.show_all()
+            btn.connect("clicked", Handler.onCloseTab, path, buffer, pos)
 
             app.openfiles.append([path, buffer, pos])
 
@@ -143,8 +143,10 @@ class Handler:
 
             app.builder.get_object("window1").set_title(path)
 
-    def onCloseTab(self, *args):
-        print("TODO: Handle close of tab")
+    def onCloseTab(self, path, buffer, pos):
+        if not buffer.get_modified():
+            app.builder.get_object("notebook1").remove_page(pos)
+            app.openfiles.remove([path, buffer, pos])
 
     def onSaveAs(self, *args):
         dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
