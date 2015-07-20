@@ -132,9 +132,9 @@ class Handler:
             notebook = app.builder.get_object("notebook1")
             pos = notebook.append_page(swindow, hbox)
             notebook.show_all()
-            btn.connect("clicked", Handler.onCloseTab, path, buffer, pos)
+            btn.connect("clicked", Handler.onCloseTab, path, buffer, swindow)
 
-            app.openfiles.append([path, buffer, pos])
+            app.openfiles.append([path, buffer, swindow])
 
             print(app.openfiles)
 
@@ -143,42 +143,41 @@ class Handler:
 
             app.builder.get_object("window1").set_title(path)
 
-    def onCloseTab(self, path, buffer, pos):
-        if not buffer.get_modified():
-            app.builder.get_object("notebook1").remove_page(pos)
-            app.openfiles.remove([path, buffer, pos])
+    def onCloseTab(self, path, buffer, swindow):
+        if buffer.get_modified():
+            Handler.onSave(path, buffer)
 
-    def onSaveAs(self, *args):
+        pos = app.builder.get_object("notebook1").page_num(swindow)
+        app.builder.get_object("notebook1").remove_page(pos)
+        app.openfiles.remove([path, buffer, swindow])
+
+    def onSaveAs(self, buffer):
         dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
             Gtk.FileChooserAction.SAVE,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            self.save(dialog.get_filename())
+            self.save(dialog.get_filename(), buffer)
         dialog.destroy()
 
-    def onSave(self, *args):
-        if app.filename == "":
-            self.onSaveAs(*args)
+    def onSave(self, path, buffer):
+        if path == "":
+            self.onSaveAs(buffer)
             return
-        self.save(app.filename)
+        self.save(path, buffer)
 
-    def save(self, filename):
-        with open (filename, "w") as loadedfile:
-            buffer = app.builder.get_object("gtksourceview1").get_buffer()
+    def save(self, path, buffer):
+        with open (path, "w") as loadedfile:
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
-            app.filename = filename
             buffer.set_modified(False)
             # syntax highlighting
             lman = GtkSource.LanguageManager()
-            lan = lman.guess_language(filename)
+            lan = lman.guess_language(path)
             if lan:
                 buffer.set_highlight_syntax(True)
                 buffer.set_language(lan)
             else:
                 buffer.set_highlight_syntax(False)
-
-            window = app.builder.get_object("window1").set_title(filename)
 
     def onRunApp(self, *args):
 
