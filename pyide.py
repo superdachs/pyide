@@ -19,11 +19,10 @@ class Handler:
         buffer = app.builder.get_object("gtksourceview1").get_buffer()
         buffer.paste_clipboard(app.clipboard, None, True)
 
-    def onModified(self, *args):
-        buffer = app.builder.get_object("gtksourceview1").get_buffer()
+    def onModified(self, buffer, label):
         if buffer.get_modified():
-            title = app.builder.get_object("window1").get_title()
-            app.builder.get_object("window1").set_title(title + "*")
+            label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
+            print(label.get_text())
 
     def onDeleteWindow(self, *args):
         Gtk.main_quit(*args)
@@ -95,6 +94,31 @@ class Handler:
             openfile(dialog.get_filename())
         dialog.destroy()
 
+    def create_tab(path, buffer):
+        hbox = Gtk.HBox(False, 0)
+        label = Gtk.Label(path)
+        hbox.pack_start(label, True, True, 0)
+        close_image = Gtk.IconTheme.get_default().load_icon("exit", 16, 0)
+        imgw = Gtk.Image()
+        imgw.set_from_pixbuf(close_image)
+        btn = Gtk.Button()
+        btn.set_focus_on_click(False)
+        btn.add(imgw)
+        hbox.pack_start(btn, False, False, 0)
+        hbox.show_all()
+
+        sview = GtkSource.View()
+        sview.set_buffer(buffer)
+        swindow = Gtk.ScrolledWindow()
+        swindow.add(sview)
+        notebook = app.builder.get_object("notebook1")
+        pos = notebook.append_page(swindow, hbox)
+        notebook.show_all()
+        btn.connect("clicked", Handler.onCloseTab, path, buffer, swindow)
+        buffer.connect("modified-changed", Handler.onModified, buffer, label)
+
+        return swindow
+
     def openfile(path):
         for of in app.openfiles:
             if path in of[0]:
@@ -103,7 +127,6 @@ class Handler:
             buffer = GtkSource.Buffer()
             buffer.set_text(loadedfile.read())
             buffer.set_modified(False)
-            buffer.connect("modified-changed", Handler.onModified)
             # syntax highlighting
             lman = GtkSource.LanguageManager()
             lan = lman.guess_language(path)
@@ -113,26 +136,7 @@ class Handler:
             else:
                 buffer.set_highlight_syntax(False)
 
-            hbox = Gtk.HBox(False, 0)
-            label = Gtk.Label(path)
-            hbox.pack_start(label, True, True, 0)
-            close_image = Gtk.IconTheme.get_default().load_icon("exit", 16, 0)
-            imgw = Gtk.Image()
-            imgw.set_from_pixbuf(close_image)
-            btn = Gtk.Button()
-            btn.set_focus_on_click(False)
-            btn.add(imgw)
-            hbox.pack_start(btn, False, False, 0)
-            hbox.show_all()
-
-            sview = GtkSource.View()
-            sview.set_buffer(buffer)
-            swindow = Gtk.ScrolledWindow()
-            swindow.add(sview)
-            notebook = app.builder.get_object("notebook1")
-            pos = notebook.append_page(swindow, hbox)
-            notebook.show_all()
-            btn.connect("clicked", Handler.onCloseTab, path, buffer, swindow)
+            swindow = Handler.create_tab(path, buffer)
 
             app.openfiles.append([path, buffer, swindow])
 
