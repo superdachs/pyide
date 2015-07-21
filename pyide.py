@@ -9,14 +9,6 @@ class Handler:
 
     def onDeleteWindow(self, *args):
         Gtk.main_quit(*args)
-        # quit = True
-        # if app.builder.get_object("gtksourceview1").get_buffer().get_modified():
-        #     quit = self.askForSave()
-        # if quit:
-        #     Gtk.main_quit(*args)
-        # else:
-        #     return True
-
 
     def onInfo(self, *args):
         dialog = app.builder.get_object("window2")
@@ -84,15 +76,7 @@ class Handler:
                 buffer.set_highlight_syntax(False)
 
             swindow = Handler.create_tab(path, buffer)
-
             app.openfiles.append([path, buffer, swindow])
-
-            print(app.openfiles)
-
-            #TODO: remove
-            app.filename = path
-
-            app.builder.get_object("window1").set_title(path)
 
     def onCloseTab(self, path, buffer, swindow):
         if buffer.get_modified():
@@ -106,7 +90,7 @@ class Handler:
 
         f = "/tmp/%i.py" % int(time.time())
         with open (f, "w") as loadedfile:
-            buffer = app.builder.get_object("notebook1")
+            buffer = app.builder.get_object("notebook1").get_current_page().get_child().get_child().get_buffer()
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
 
         termwin = Gtk.Window()
@@ -132,6 +116,10 @@ class Handler:
         termwin.show_all()
         cmd = "python " + f + "\n"
         terminal.feed_child(cmd, len(cmd))
+
+
+
+class FsTree:
 
     def populateFileSystemTreeStore(treeStore, path, parent=None):
         itemCounter = 0
@@ -188,7 +176,6 @@ class Handler:
         treeStore.append(treeIter, [None, None, None])
 
     def onFSRowActivated(treeView, path, column):
-
         model = treeView.get_model()
         curiter = model.get_iter(path)
         fspath = model.get_value(curiter, 2)
@@ -210,7 +197,7 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
-        Handler.populateFileSystemTreeStore(fileSystemTreeStore, '/home/superdachs')
+        FsTree.populateFileSystemTreeStore(fileSystemTreeStore, '/home/superdachs')
         fileSystemTreeView = self.builder.get_object("treeview1")
         fileSystemTreeView.set_model(fileSystemTreeStore)
         treeViewCol = Gtk.TreeViewColumn("File")
@@ -221,9 +208,9 @@ class Pyide:
         treeViewCol.add_attribute(colCellText, "text", 0)
         treeViewCol.add_attribute(colCellImg, "pixbuf", 1)
         fileSystemTreeView.append_column(treeViewCol)
-        fileSystemTreeView.connect("row-expanded", Handler.onFSRowExpanded)
-        fileSystemTreeView.connect("row-collapsed", Handler.onFSRowCollapsed)
-        fileSystemTreeView.connect("row-activated", Handler.onFSRowActivated)
+        fileSystemTreeView.connect("row-expanded", FsTree.onFSRowExpanded)
+        fileSystemTreeView.connect("row-collapsed", FsTree.onFSRowCollapsed)
+        fileSystemTreeView.connect("row-activated", FsTree.onFSRowActivated)
 
         self.builder.connect_signals(Handler())
 
