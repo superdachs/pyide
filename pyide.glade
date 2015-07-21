@@ -37,6 +37,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <property name="always_show_image">True</property>
+                        <signal name="activate" handler="onNew" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -219,6 +220,7 @@
                 <property name="label" translatable="yes">toolbutton1</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-new</property>
+                <signal name="clicked" handler="onNew" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -256,6 +258,7 @@
                 <property name="label" translatable="yes">toolbutton3</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-media-play</property>
+                <signal name="clicked" handler="onRunApp" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>

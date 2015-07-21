@@ -45,6 +45,11 @@ class Handler:
             openfile(dialog.get_filename())
         dialog.destroy()
 
+    def onNew(self, *args):
+        buffer = GtkSource.Buffer()
+        swindow = Handler.create_tab("unnamed", buffer)
+        app.openfiles.append([None, buffer, swindow])
+
     def create_tab(path, buffer):
         hbox = Gtk.HBox(False, 0)
         label = Gtk.Label(path)
@@ -125,17 +130,21 @@ class Handler:
 
         f = "/tmp/%i.py" % int(time.time())
         with open (f, "w") as loadedfile:
-            buffer = Handler.getCurrentBuffer()
+            buffer, label = Handler.getCurrentBufferAndLabel()
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
-
+        label.set_markup("<span foreground='#009000'>%s</span>" % label.get_text())
         termwin = Gtk.Window()
         termwin.set_default_size(800, 600)
 
-        def closeTerm(win, evt):
+        def closeTerm(win, evt, label, buffer):
             win.destroy()
             os.remove(f)
+            if buffer.get_modified():
+                label.set_markup("<span foreground='#FF8000'>%s</span>" % label.get_text())
+            else:
+                label.set_markup("<span foreground='#000000'>%s</span>" % label.get_text())
 
-        termwin.connect("delete-event", closeTerm)
+        termwin.connect("delete-event", closeTerm, label, buffer)
 
         terminal = Vte.Terminal()
         terminal.spawn_sync(
