@@ -6,6 +6,14 @@ import os, stat, time
 
 
 class Handler:
+    def onCopy(self, *args):
+        Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
+
+    def onCut(self, *args):
+        Handler.getCurrentBuffer().cut_clipboard(app.clipboard, True)
+
+    def onPaste(self, *args):
+        Handler.getCurrentBuffer().paste_clipboard(app.clipboard, None, True)
 
     def onModified(self, label, buffer):
         if buffer.get_modified():
@@ -83,9 +91,6 @@ class Handler:
             app.openfiles.append([path, buffer, swindow])
 
     def onCloseTab(self, path, buffer, swindow):
-        if buffer.get_modified():
-            Handler.onSave(Handler(), path, buffer)
-
         pos = app.builder.get_object("notebook1").page_num(swindow)
         app.builder.get_object("notebook1").remove_page(pos)
         app.openfiles.remove([path, buffer, swindow])
