@@ -90,11 +90,17 @@ class Handler:
         app.builder.get_object("notebook1").remove_page(pos)
         app.openfiles.remove([path, buffer, swindow])
 
+    def getCurrentBuffer():
+        currentpage = app.builder.get_object("notebook1").get_current_page()
+        window = app.builder.get_object("notebook1").get_nth_page(currentpage)
+        view = window.get_child()
+        return view.get_buffer()
+
     def onRunApp(self, *args):
 
         f = "/tmp/%i.py" % int(time.time())
         with open (f, "w") as loadedfile:
-            buffer = app.builder.get_object("notebook1").get_current_page().get_child().get_child().get_buffer()
+            buffer = Handler.getCurrentBuffer()
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
 
         termwin = Gtk.Window()
@@ -197,7 +203,7 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
-        FsTree.populateFileSystemTreeStore(fileSystemTreeStore, '/home/superdachs')
+        FsTree.populateFileSystemTreeStore(fileSystemTreeStore, os.path.expanduser("~"))
         fileSystemTreeView = self.builder.get_object("treeview1")
         fileSystemTreeView.set_model(fileSystemTreeStore)
         treeViewCol = Gtk.TreeViewColumn("File")
