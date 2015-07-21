@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib
+from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
 import os, stat, time
 
@@ -22,14 +22,6 @@ class Handler:
     def onDeleteWindow(self, *args):
         Gtk.main_quit(*args)
 
-    def onInfo(self, *args):
-        dialog = app.builder.get_object("window2")
-        dialog.set_title("info")
-        dialog.show_all()
-
-    def onInfoOk(sel, *args):
-        app.builder.get_object("window2").hide()
-
     def onFullscreen(self, *args):
         app.builder.get_object("window1").fullscreen()
 
@@ -42,11 +34,17 @@ class Handler:
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            openfile(dialog.get_filename())
+            Handler.openfile(dialog.get_filename())
         dialog.destroy()
 
     def onNew(self, *args):
         buffer = GtkSource.Buffer()
+        lanm = GtkSource.LanguageManager()
+        lan = lanm.get_language('python')
+        buffer.set_language(lan)
+        buffer.set_highlight_syntax(True)
+        buffer.set_highlight_matching_brackets (True)
+        buffer.set_text("#!/usr/bin/env python")
         swindow = Handler.create_tab("unnamed", buffer)
         app.openfiles.append([None, buffer, swindow])
 
@@ -64,6 +62,15 @@ class Handler:
         hbox.show_all()
 
         sview = GtkSource.View()
+        sview.set_show_line_numbers(True)
+        sview.set_auto_indent(True)
+        sview.set_tab_width(4)
+        sview.set_indent_width(4)
+        sview.set_insert_spaces_instead_of_tabs(True)
+        sview.set_right_margin_position(80)
+        sview.set_show_right_margin(True)
+        sview.set_auto_indent(True)
+        sview.modify_font(Pango.FontDescription('Dejavu Sans Mono'))
         sview.set_buffer(buffer)
         swindow = Gtk.ScrolledWindow()
         swindow.add(sview)
@@ -72,13 +79,14 @@ class Handler:
         notebook.show_all()
         btn.connect("clicked", Handler.onCloseTab, path, buffer, swindow)
         buffer.connect("modified-changed", Handler.onModified, label, buffer)
-
+        notebook.set_current_page(pos)
         return swindow
 
     def openfile(path):
         for of in app.openfiles:
-            if path in of[0]:
-                return
+            if of[0] != None:
+                if path in of[0]:
+                    return
         with open (path, "r") as loadedfile:
             buffer = GtkSource.Buffer()
             buffer.set_text(loadedfile.read())
@@ -91,6 +99,7 @@ class Handler:
                 buffer.set_language(lan)
             else:
                 buffer.set_highlight_syntax(False)
+            buffer.set_highlight_matching_brackets(True)
 
             swindow = Handler.create_tab(path, buffer)
             app.openfiles.append([path, buffer, swindow])
@@ -99,20 +108,49 @@ class Handler:
         pos = app.builder.get_object("notebook1").page_num(swindow)
         window = app.builder.get_object("notebook1").get_nth_page(pos)
         buffer = window.get_child().get_buffer()
-        if buffer.get_modified():
-            print("MODIFIED!")
+        #if buffer.get_modified():
             #TODO: ask for save
         app.builder.get_object("notebook1").remove_page(pos)
         app.openfiles.remove([path, buffer, swindow])
 
+    def savefile(buffer, path, label):
+        with open(path, 'w') as f:
+            f.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
+            label.set_markup("<span foreground='#000000'>%s</span>" % label.get_text())
+            buffer.set_modified(False)
+            Handler.updateOpenFiles(path, buffer)
+
     def onSaveCurrent(self, *args):
         buffer, label = Handler.getCurrentBufferAndLabel()
         path = Handler.getPathFromOpenFiles(buffer)
-        if path != None:
-            with open(path, 'w') as f:
-                f.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
-                label.set_markup("<span foreground='#000000'>%s</span>" % label.get_text())
-                buffer.set_modified(False)
+        if path == None:
+            path = Handler.saveAs()
+            label.set_text(path)
+        Handler.savefile(buffer, path, label)
+
+    def updateOpenFiles(path, buffer):
+        for i in app.openfiles:
+            if i[1] == buffer:
+                i[0] = path
+                i[1] = buffer
+
+    def onSaveAsCurrent(self, *args):
+        buffer, label = Handler.getCurrentBufferAndLabel()
+        path = Handler.saveAs()
+        label.set_text(path)
+        Handler.savefile(buffer, path, label)
+
+    def saveAs():
+        dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
+        Gtk.FileChooserAction.SAVE,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        response = dialog.run()
+        retval = None
+        if response == Gtk.ResponseType.OK:
+            retval = dialog.get_filename()
+        dialog.destroy()
+        return retval
+
 
     def getPathFromOpenFiles(buffer):
         for i in app.openfiles:
@@ -198,7 +236,6 @@ class FsTree:
         # get the associated model
         treeStore = treeView.get_model()
         # get the full path of the position
-        print(treeIter)
         newPath = treeStore.get_value(treeIter, 2)
         # populate the subtree on curent position
         Handler.populateFileSystemTreeStore(treeStore, newPath, treeIter)
