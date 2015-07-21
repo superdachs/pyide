@@ -45,6 +45,7 @@ class Handler:
         buffer.set_highlight_syntax(True)
         buffer.set_highlight_matching_brackets (True)
         buffer.set_text("#!/usr/bin/env python")
+        buffer.set_modified(False)
         swindow = Handler.create_tab("unnamed", buffer)
         app.openfiles.append([None, buffer, swindow])
 
@@ -104,14 +105,48 @@ class Handler:
             swindow = Handler.create_tab(path, buffer)
             app.openfiles.append([path, buffer, swindow])
 
+    def askForSave(buffer):
+        dialog = Gtk.Dialog("ask for save dialog", app.builder.get_object("window1"), 0,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_YES, Gtk.ResponseType.YES,
+             Gtk.STOCK_NO, Gtk.ResponseType.NO))
+        dialog.get_content_area().add(Gtk.Label("Datei nicht gespeichert. Wollen Sie die datei jetzt speichern?"))
+        dialog.set_default_size(150, 100)
+        dialog.show_all()
+        response = dialog.run()
+        if response == Gtk.ResponseType.YES:
+            Handler.onSaveCurrent(Handler())
+            dialog.destroy()
+            if not buffer.get_modified():
+                return True
+            else:
+                return False
+        elif response == Gtk.ResponseType.NO:
+            dialog.destroy()
+            return True
+        else:
+            dialog.destroy()
+            return False
+
+
     def onCloseTab(self, path, buffer, swindow):
         pos = app.builder.get_object("notebook1").page_num(swindow)
         window = app.builder.get_object("notebook1").get_nth_page(pos)
         buffer = window.get_child().get_buffer()
-        #if buffer.get_modified():
-            #TODO: ask for save
-        app.builder.get_object("notebook1").remove_page(pos)
-        app.openfiles.remove([path, buffer, swindow])
+        if buffer.get_modified():
+            response = Handler.askForSave(buffer)
+            if response:
+                app.builder.get_object("notebook1").remove_page(pos)
+                for i in app.openfiles:
+                    if i[1] == buffer:
+                        path = i[0]
+                        app.openfiles.remove([path, buffer, swindow])
+        else:
+            app.builder.get_object("notebook1").remove_page(pos)
+            for i in app.openfiles:
+                if i[1] == buffer:
+                    path = i[0]
+                    app.openfiles.remove([path, buffer, swindow])
 
     def savefile(buffer, path, label):
         with open(path, 'w') as f:
