@@ -7,23 +7,6 @@ import os, stat, time
 
 class Handler:
 
-    def onCopy(self, *args):
-        buffer = app.builder.get_object("gtksourceview1").get_buffer()
-        buffer.copy_clipboard(app.clipboard)
-
-    def onCut(self, *args):
-        buffer = app.builder.get_object("gtksourceview1").get_buffer()
-        buffer.cut_clipboard(app.clipboard, True)
-
-    def onPaste(self, *args):
-        buffer = app.builder.get_object("gtksourceview1").get_buffer()
-        buffer.paste_clipboard(app.clipboard, None, True)
-
-    def onModified(self, buffer, label):
-        if buffer.get_modified():
-            label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
-            print(label.get_text())
-
     def onDeleteWindow(self, *args):
         Gtk.main_quit(*args)
         # quit = True
@@ -34,28 +17,6 @@ class Handler:
         # else:
         #     return True
 
-    def askForSave(self, *args):
-        dialog = Gtk.Dialog("ask for save dialog", app.builder.get_object("window1"), 0,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_YES, Gtk.ResponseType.YES,
-             Gtk.STOCK_NO, Gtk.ResponseType.NO))
-        dialog.get_content_area().add(Gtk.Label("Datei nicht gespeichert. Wollen Sie die datei jetzt speichern?"))
-        dialog.set_default_size(150, 100)
-        dialog.show_all()
-        response = dialog.run()
-        if response == Gtk.ResponseType.YES:
-            self.onSave(*args)
-            dialog.destroy()
-            if not app.builder.get_object("gtksourceview1").get_buffer().get_modified():
-                return True
-            else:
-                return False
-        elif response == Gtk.ResponseType.NO:
-            dialog.destroy()
-            return True
-        else:
-            dialog.destroy()
-            return False
 
     def onInfo(self, *args):
         dialog = app.builder.get_object("window2")
@@ -70,20 +31,6 @@ class Handler:
 
     def onWindow(self, *args):
         app.builder.get_object("window1").unfullscreen()
-
-    # file handling
-
-    def onNew(self, *args):
-        buffer = GtkSource.Buffer()
-        buffer.set_modified(False)
-        lanm = GtkSource.LanguageManager()
-        lan = lanm.get_language('python')
-        buffer.set_language(lan)
-        buffer.set_highlight_syntax(True)
-        buffer.set_text("#!/usr/bin/env python")
-        app.builder.get_object("gtksourceview1").set_buffer(buffer)
-        buffer.set_modified(False)
-        buffer.connect("modified-changed", Handler.onModified)
 
     def onOpen(self, *args):
         dialog = Gtk.FileChooserDialog("open file", app.builder.get_object("window1"),
@@ -149,45 +96,17 @@ class Handler:
 
     def onCloseTab(self, path, buffer, swindow):
         if buffer.get_modified():
-            Handler.onSave(path, buffer)
+            Handler.onSave(Handler(), path, buffer)
 
         pos = app.builder.get_object("notebook1").page_num(swindow)
         app.builder.get_object("notebook1").remove_page(pos)
         app.openfiles.remove([path, buffer, swindow])
 
-    def onSaveAs(self, buffer):
-        dialog = Gtk.FileChooserDialog("save file as", app.builder.get_object("window1"),
-            Gtk.FileChooserAction.SAVE,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.save(dialog.get_filename(), buffer)
-        dialog.destroy()
-
-    def onSave(self, path, buffer):
-        if path == "":
-            self.onSaveAs(buffer)
-            return
-        self.save(path, buffer)
-
-    def save(self, path, buffer):
-        with open (path, "w") as loadedfile:
-            loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
-            buffer.set_modified(False)
-            # syntax highlighting
-            lman = GtkSource.LanguageManager()
-            lan = lman.guess_language(path)
-            if lan:
-                buffer.set_highlight_syntax(True)
-                buffer.set_language(lan)
-            else:
-                buffer.set_highlight_syntax(False)
-
     def onRunApp(self, *args):
 
         f = "/tmp/%i.py" % int(time.time())
         with open (f, "w") as loadedfile:
-            buffer = app.builder.get_object("gtksourceview1").get_buffer()
+            buffer = app.builder.get_object("notebook1")
             loadedfile.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
 
         termwin = Gtk.Window()
