@@ -92,14 +92,34 @@ class Handler:
 
     def onCloseTab(self, path, buffer, swindow):
         pos = app.builder.get_object("notebook1").page_num(swindow)
+        window = app.builder.get_object("notebook1").get_nth_page(pos)
+        buffer = window.get_child().get_buffer()
+        if buffer.get_modified():
+            print("MODIFIED!")
+            #TODO: ask for save
         app.builder.get_object("notebook1").remove_page(pos)
         app.openfiles.remove([path, buffer, swindow])
 
-    def getCurrentBuffer():
+    def onSaveCurrent(self, *args):
+        buffer, label = Handler.getCurrentBufferAndLabel()
+        path = Handler.getPathFromOpenFiles(buffer)
+        if path != None:
+            with open(path, 'w') as f:
+                f.write(buffer.get_text(*buffer.get_bounds(), include_hidden_chars=True))
+                label.set_markup("<span foreground='#000000'>%s</span>" % label.get_text())
+                buffer.set_modified(False)
+
+    def getPathFromOpenFiles(buffer):
+        for i in app.openfiles:
+            if i[1] == buffer:
+                return i[0]
+
+    def getCurrentBufferAndLabel():
         currentpage = app.builder.get_object("notebook1").get_current_page()
         window = app.builder.get_object("notebook1").get_nth_page(currentpage)
+        label = app.builder.get_object("notebook1").get_tab_label(window).get_children()[0]
         view = window.get_child()
-        return view.get_buffer()
+        return view.get_buffer(), label
 
     def onRunApp(self, *args):
 
