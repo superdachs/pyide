@@ -7,6 +7,10 @@ import os, stat, time
 
 class Handler:
 
+    def onModified(self, label, buffer):
+        if buffer.get_modified():
+            label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
+
     def onDeleteWindow(self, *args):
         Gtk.main_quit(*args)
 
@@ -54,7 +58,7 @@ class Handler:
         pos = notebook.append_page(swindow, hbox)
         notebook.show_all()
         btn.connect("clicked", Handler.onCloseTab, path, buffer, swindow)
-        buffer.connect("modified-changed", Handler.onModified, buffer, label)
+        buffer.connect("modified-changed", Handler.onModified, label, buffer)
 
         return swindow
 
@@ -185,11 +189,7 @@ class FsTree:
 class Pyide:
 
     openfiles = []
-
-    filename = ""
-
     # fs tree store from http://stackoverflow.com/questions/23433819/creating-a-simple-file-browser-using-python-and-gtktreeview
-
     def __init__(self, *args):
         self.builder = Gtk.Builder()
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
