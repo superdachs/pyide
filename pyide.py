@@ -20,6 +20,10 @@ class Handler:
             label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
 
     def onDeleteWindow(self, *args):
+        for i in app.openfiles:
+            pos = app.builder.get_object("notebook1").page_num(i[2])
+            app.builder.get_object("notebook1").set_current_page(pos)
+            Handler.onCloseTab(Handler(), i[0], i[1], i[2])
         Gtk.main_quit(*args)
 
     def onFullscreen(self, *args):
