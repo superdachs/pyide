@@ -23,7 +23,9 @@ class Handler:
         for i in app.openfiles:
             pos = app.builder.get_object("notebook1").page_num(i[2])
             app.builder.get_object("notebook1").set_current_page(pos)
-            Handler.onCloseTab(Handler(), i[0], i[1], i[2])
+            isclosed = Handler.onCloseTab(Handler(), i[0], i[1], i[2])
+            if not isclosed:
+                return True
         Gtk.main_quit(*args)
 
     def onFullscreen(self, *args):
@@ -145,12 +147,14 @@ class Handler:
                     if i[1] == buffer:
                         path = i[0]
                         app.openfiles.remove([path, buffer, swindow])
+                        return True
         else:
             app.builder.get_object("notebook1").remove_page(pos)
             for i in app.openfiles:
                 if i[1] == buffer:
                     path = i[0]
                     app.openfiles.remove([path, buffer, swindow])
+                    return False
 
     def savefile(buffer, path, label):
         with open(path, 'w') as f:
