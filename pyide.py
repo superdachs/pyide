@@ -2,10 +2,14 @@
 
 from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
-import os, stat, time
+import os, stat, time, configparser
 
 
 class Handler:
+
+    def onApplicationSettings(self, *args):
+        app.builder.get_object("window2").show_all()
+
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
 
@@ -69,15 +73,11 @@ class Handler:
         hbox.show_all()
 
         sview = GtkSource.View()
-        sview.set_show_line_numbers(True)
-        sview.set_auto_indent(True)
-        sview.set_tab_width(4)
-        sview.set_indent_width(4)
-        sview.set_insert_spaces_instead_of_tabs(True)
-        sview.set_right_margin_position(80)
-        sview.set_show_right_margin(True)
-        sview.set_auto_indent(True)
-        sview.modify_font(Pango.FontDescription('Dejavu Sans Mono'))
+
+        #Settings
+        app.settings.apply(sview)
+        #Settings
+
         sview.set_buffer(buffer)
         swindow = Gtk.ScrolledWindow()
         swindow.add(sview)
@@ -306,6 +306,96 @@ class FsTree:
         if not os.path.isdir(str(fspath)):
             Handler.openfile(str(fspath))
 
+class Settings:
+
+    def __init__(self, *args):
+        self.Config = configparser.ConfigParser()
+        self.load_standard_config()
+
+        if os.path.isfile(os.path.join(os.path.expanduser("~"), '.pyide.conf')):
+            self.load_config()
+
+        self.write_config()
+
+    def ConfigSectionMap(self, section):
+        dict1 = {}
+        options = self.Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = self.Config.get(section, option)
+                if dict1[option] == -1:
+                    print("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+
+        return dict1
+
+    def load_config(self):
+        self.Config.read(os.path.join(os.path.expanduser("~"), '.pyide.conf'))
+
+        self.user_name = self.ConfigSectionMap("User")['name']
+        self.user_email = self.ConfigSectionMap("User")['email']
+
+        self.line_numbers = self.ConfigSectionMap("Editor")['line_numbers']
+        self.auto_indent = self.ConfigSectionMap("Editor")['auto_indent']
+        self.tab_width = self.ConfigSectionMap("Editor")['tab_width']
+        self.indent_width = self.ConfigSectionMap("Editor")['indent_width']
+        self.tabs_to_spaces = self.ConfigSectionMap("Editor")['tabs_to_spaces']
+        self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
+        self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
+        self.editor_font = self.ConfigSectionMap("Editor")['editor_font']
+
+    def write_config(self):
+        cfgfile = open(os.path.join(os.path.expanduser("~"), '.pyide.conf'), 'w')
+        try:
+            self.Config.add_section('Editor')
+        except:
+            pass
+        try:
+            self.Config.add_section('User')
+        except:
+            pass
+
+        self.Config.set('User', 'name', str(self.user_name))
+        self.Config.set('User', 'email', str(self.user_email))
+
+
+        self.Config.set('Editor', 'line_numbers', str(self.line_numbers))
+        self.Config.set('Editor', 'auto_indent', str(self.auto_indent))
+        self.Config.set('Editor', 'tab_width', str(self.tab_width))
+        self.Config.set('Editor', 'indent_width', str(self.indent_width))
+        self.Config.set('Editor', 'tabs_to_spaces', str(self.tabs_to_spaces))
+        self.Config.set('Editor', 'right_margin', str(self.right_margin))
+        self.Config.set('Editor', 'show_right_margin', str(self.show_right_margin))
+        self.Config.set('Editor', 'editor_font', str(self.editor_font))
+        self.Config.write(cfgfile)
+        cfgfile.close()
+
+    def load_standard_config(self):
+
+        self.user_name = ""
+        self.user_email = ""
+
+        self.line_numbers = True
+        self.auto_indent = True
+        self.tab_width = 4
+        self.indent_width = 4
+        self.tabs_to_spaces = True
+        self.right_margin = 80
+        self.show_right_margin = True
+        self.editor_font = 'Dejavu Sans Mono'
+
+    def apply(self, sview):
+        sview.set_show_line_numbers(self.line_numbers)
+        sview.set_auto_indent(self.auto_indent)
+        sview.set_tab_width(int(self.tab_width))
+        sview.set_indent_width(int(self.indent_width))
+        sview.set_insert_spaces_instead_of_tabs(self.tabs_to_spaces)
+        sview.set_right_margin_position(int(self.right_margin))
+        sview.set_show_right_margin(self.show_right_margin)
+        sview.modify_font(Pango.FontDescription(self.editor_font))
+
 class Pyide:
 
     openfiles = []
@@ -315,6 +405,8 @@ class Pyide:
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         GObject.type_register(GtkSource.View)
         self.builder.add_from_file("pyide.glade")
+
+        self.settings = Settings()
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
         FsTree.populateFileSystemTreeStore(fileSystemTreeStore, os.path.expanduser("~"))
