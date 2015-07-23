@@ -8,7 +8,8 @@ import os, stat, time, configparser
 class Handler:
 
     def onApplicationSettings(self, *args):
-        app.builder.get_object("window2").show_all()
+        window = app.builder.get_object("window2")
+        window.show_all()
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
