@@ -23,13 +23,12 @@ class Handler:
         if buffer.get_modified():
             label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
 
-    #TODO: isclosed allways returns False one Time so first close won't work -> FIX!!!
-
     def onDeleteWindow(self, *args):
         for i in app.openfiles:
             pos = app.builder.get_object("notebook1").page_num(i[2])
             app.builder.get_object("notebook1").set_current_page(pos)
             isclosed = Handler.onCloseTab(Handler(), i[0], i[1], i[2])
+            print(isclosed)
             if not isclosed:
                 return True
         Gtk.main_quit(*args)
@@ -150,13 +149,15 @@ class Handler:
                         path = i[0]
                         app.openfiles.remove([path, buffer, swindow])
                         return True
+            else:
+                return False
         else:
             app.builder.get_object("notebook1").remove_page(pos)
             for i in app.openfiles:
                 if i[1] == buffer:
                     path = i[0]
                     app.openfiles.remove([path, buffer, swindow])
-                    return False
+                    return True
 
     def savefile(buffer, path, label):
         with open(path, 'w') as f:
