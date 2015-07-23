@@ -23,6 +23,8 @@ class Handler:
         if buffer.get_modified():
             label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
 
+    #TODO: isclosed allways returns False one Time so first close won't work -> FIX!!!
+
     def onDeleteWindow(self, *args):
         for i in app.openfiles:
             pos = app.builder.get_object("notebook1").page_num(i[2])
