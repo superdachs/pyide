@@ -8,8 +8,26 @@ import os, stat, time, configparser
 class Handler:
 
     def onApplicationSettings(self, *args):
-        window = app.builder.get_object("window2")
-        window.show_all()
+        notebook = app.builder.get_object("notebook1")
+        hbox = Gtk.HBox(False, 0)
+        label = Gtk.Label("Settings")
+        hbox.pack_start(label, True, True, 0)
+        close_image = Gtk.IconTheme.get_default().load_icon("exit", 16, 0)
+        imgw = Gtk.Image()
+        imgw.set_from_pixbuf(close_image)
+        btn = Gtk.Button()
+        btn.set_focus_on_click(False)
+        btn.add(imgw)
+        hbox.pack_start(btn, False, False, 0)
+        hbox.show_all()
+        
+        # actual settings
+        swindow = Gtk.ScrolledWindow()        
+                
+        notebook.append_page(swindow, hbox)
+        notebook.show_all()
+
+
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
