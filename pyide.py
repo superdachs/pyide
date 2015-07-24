@@ -23,6 +23,8 @@ class Handler:
         
         # actual settings
         swindow = Gtk.ScrolledWindow()        
+       
+         
                 
         notebook.append_page(swindow, hbox)
         notebook.show_all()
