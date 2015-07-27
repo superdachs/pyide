@@ -22,14 +22,26 @@ class Handler:
         hbox.show_all()
         
         # actual settings
-        swindow = Gtk.ScrolledWindow()        
-       
-         
+        settings_nb = Gtk.Notebook()
+        # user tab
+        uswin = Gtk.ScrolledWindow()
+
+        unhbox = Gtk.Box(False, 0)
+        unhbox.pack_start(Gtk.Label("Username"), True, True, 0)
+        userinput = Gtk.Entry()
+        unhbox.pack_start(userinput, False, False, 0)
+        uswin.add(unhbox)
+
+        umhbox = Gtk.Box(False, 0)
+        umhbox.pack_start(Gtk.Label("E-Mail"), True, True, 0)
+        mailinput = Gtk.Entry()
+        umhbox.pack_start(mailinput, False, False, 0)
+        uswin.add(umhbox)
+
+        settings_nb.append_page(uswin, Gtk.Label('User'))
                 
-        notebook.append_page(swindow, hbox)
+        notebook.append_page(settings_nb, hbox)
         notebook.show_all()
-
-
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
@@ -450,8 +462,20 @@ class Pyide:
 
         self.builder.connect_signals(Handler())
 
+
+        
+
+
     def run(self):
         window = self.builder.get_object("window1")
+
+#        win_style_context = window.get_style_context()
+#        css_provider = Gtk.CssProvider()
+#        css_provider.load_from_path("/usr/share/themes/HighContrast/gtk-3.0/gtk.css")
+#        screen = Gdk.Screen.get_default()
+#        win_style_context.add_provider_for_screen(screen, css_provider,
+#                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
         window.show_all()
         Gtk.main()
 
