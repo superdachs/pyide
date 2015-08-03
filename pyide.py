@@ -8,7 +8,35 @@ import os, stat, time, configparser
 class Handler:
 
     def onApplicationSettings(self, *args):
+        app.builder.get_object("settings_username").set_text(app.settings.user_name)
+        app.builder.get_object("settings_email").set_text(app.settings.user_email)
+        app.builder.get_object("settings_linenumbers").set_active(app.settings.line_numbers)
+        app.builder.get_object("settungs_rightmargin").set_active(app.settings.right_margin)
+
         app.builder.get_object("settings_window").show_all()
+
+    def onSettingsWindowCancel(self, *args):
+        print("SAVE")
+        app.builder.get_object("settings_window").hide()
+        return True
+
+
+    def onSettingsWindowSave(self, settings):
+        app.settings.user_name = app.builder.get_object("settings_username").get_text()
+        app.settings.user_email = app.builder.get_object("settings_email").get_text()
+        app.settings.line_numbers = app.builder.get_object("settings_linenumbers").get_active()
+        app.settings.right_margin = app.builder.get_object("settungs_rightmargin").get_active()
+
+
+        app.settings.write_config()
+
+        for f in app.openfiles:
+            app.settings.apply(f[2])
+
+        #TODO: apply settings
+
+        app.builder.get_object("settings_window").hide()
+
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
@@ -341,11 +369,12 @@ class Settings:
         self.user_email = self.ConfigSectionMap("User")['email']
 
         self.line_numbers = self.ConfigSectionMap("Editor")['line_numbers']
+        self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
+
         self.auto_indent = self.ConfigSectionMap("Editor")['auto_indent']
         self.tab_width = self.ConfigSectionMap("Editor")['tab_width']
         self.indent_width = self.ConfigSectionMap("Editor")['indent_width']
         self.tabs_to_spaces = self.ConfigSectionMap("Editor")['tabs_to_spaces']
-        self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
         self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
         self.editor_font = self.ConfigSectionMap("Editor")['editor_font']
 
@@ -377,8 +406,8 @@ class Settings:
 
     def load_standard_config(self):
 
-        self.user_name = ""
-        self.user_email = ""
+        self.user_name = "Max Mustermann"
+        self.user_email = "max@mustermann.de"
 
         self.line_numbers = True
         self.auto_indent = True
@@ -435,14 +464,6 @@ class Pyide:
 
     def run(self):
         window = self.builder.get_object("window1")
-
-#        win_style_context = window.get_style_context()
-#        css_provider = Gtk.CssProvider()
-#        css_provider.load_from_path("/usr/share/themes/HighContrast/gtk-3.0/gtk.css")
-#        screen = Gdk.Screen.get_default()
-#        win_style_context.add_provider_for_screen(screen, css_provider,
-#                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
         window.show_all()
         Gtk.main()
 
