@@ -8,40 +8,7 @@ import os, stat, time, configparser
 class Handler:
 
     def onApplicationSettings(self, *args):
-        notebook = app.builder.get_object("notebook1")
-        hbox = Gtk.HBox(False, 0)
-        label = Gtk.Label("Settings")
-        hbox.pack_start(label, True, True, 0)
-        close_image = Gtk.IconTheme.get_default().load_icon("exit", 16, 0)
-        imgw = Gtk.Image()
-        imgw.set_from_pixbuf(close_image)
-        btn = Gtk.Button()
-        btn.set_focus_on_click(False)
-        btn.add(imgw)
-        hbox.pack_start(btn, False, False, 0)
-        hbox.show_all()
-        
-        # actual settings
-        settings_nb = Gtk.Notebook()
-        # user tab
-        uswin = Gtk.ScrolledWindow()
-
-        unhbox = Gtk.Box(False, 0)
-        unhbox.pack_start(Gtk.Label("Username"), True, True, 0)
-        userinput = Gtk.Entry()
-        unhbox.pack_start(userinput, False, False, 0)
-        uswin.add(unhbox)
-
-        umhbox = Gtk.Box(False, 0)
-        umhbox.pack_start(Gtk.Label("E-Mail"), True, True, 0)
-        mailinput = Gtk.Entry()
-        umhbox.pack_start(mailinput, False, False, 0)
-        uswin.add(umhbox)
-
-        settings_nb.append_page(uswin, Gtk.Label('User'))
-                
-        notebook.append_page(settings_nb, hbox)
-        notebook.show_all()
+        app.builder.get_object("settings_window").show_all()
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
@@ -463,7 +430,7 @@ class Pyide:
         self.builder.connect_signals(Handler())
 
 
-        
+
 
 
     def run(self):
