@@ -12,17 +12,26 @@ class Handler:
 
     def onApplicationSettings(self, *args):
 
+        app.settings.load_config()
+
         app.builder.get_object("settings_username").set_text(app.settings.user_name)
         app.builder.get_object("settings_email").set_text(app.settings.user_email)
         app.builder.get_object("settings_linenumbers").set_active(app.settings.line_numbers)
-        app.builder.get_object("settings_rightmargin").set_active(app.settings.line_numbers)
+        app.builder.get_object("settings_showrightmargin").set_active(app.settings.show_right_margin)
+        app.builder.get_object("settings_autoindent").set_active(app.settings.auto_indent)
+        app.builder.get_object("settings_tabs_to_spaces").set_active(app.settings.tabs_to_spaces)
         app.builder.get_object("settings_linenumbers").connect('toggled', Handler.onSettingsCheckBoxToggled, "line_numbers")
-        app.builder.get_object("settings_rightmargin").connect('toggled', Handler.onSettingsCheckBoxToggled, "show_right_margin")
+        app.builder.get_object("settings_showrightmargin").connect('toggled', Handler.onSettingsCheckBoxToggled, "show_right_margin")
+        app.builder.get_object("settings_autoindent").connect('toggled', Handler.onSettingsCheckBoxToggled, "auto_indent")
 
         app.builder.get_object("settings_window").show_all()
 
     def onSettingsWindowCancel(self, *args):
         app.builder.get_object("settings_window").hide()
+        try:
+            app.settings.load_config()
+        except:
+            app.settings.load_standard_config()
         return True
 
 
@@ -365,6 +374,7 @@ class Settings:
         return dict1
 
     def load_config(self):
+        print("load config...")
         self.Config.read(os.path.join(os.path.expanduser("~"), '.pyide.conf'))
 
         self.user_name = self.ConfigSectionMap("User")['name']
@@ -381,6 +391,7 @@ class Settings:
         self.editor_font = self.ConfigSectionMap("Editor")['editor_font']
 
     def write_config(self):
+        print("write_config...")
         cfgfile = open(os.path.join(os.path.expanduser("~"), '.pyide.conf'), 'w')
         try:
             self.Config.add_section('Editor')
