@@ -7,16 +7,21 @@ import os, stat, time, configparser
 
 class Handler:
 
+    def onSettingsCheckBoxToggled(self, settingsvar):
+        setattr(app.settings, settingsvar, not getattr(app.settings, settingsvar))
+
     def onApplicationSettings(self, *args):
+
         app.builder.get_object("settings_username").set_text(app.settings.user_name)
         app.builder.get_object("settings_email").set_text(app.settings.user_email)
         app.builder.get_object("settings_linenumbers").set_active(app.settings.line_numbers)
-        app.builder.get_object("settungs_rightmargin").set_active(app.settings.right_margin)
+        app.builder.get_object("settings_rightmargin").set_active(app.settings.line_numbers)
+        app.builder.get_object("settings_linenumbers").connect('toggled', Handler.onSettingsCheckBoxToggled, "line_numbers")
+        app.builder.get_object("settings_rightmargin").connect('toggled', Handler.onSettingsCheckBoxToggled, "show_right_margin")
 
         app.builder.get_object("settings_window").show_all()
 
     def onSettingsWindowCancel(self, *args):
-        print("SAVE")
         app.builder.get_object("settings_window").hide()
         return True
 
@@ -24,9 +29,6 @@ class Handler:
     def onSettingsWindowSave(self, settings):
         app.settings.user_name = app.builder.get_object("settings_username").get_text()
         app.settings.user_email = app.builder.get_object("settings_email").get_text()
-        app.settings.line_numbers = app.builder.get_object("settings_linenumbers").get_active()
-        app.settings.right_margin = app.builder.get_object("settungs_rightmargin").get_active()
-
 
         app.settings.write_config()
 
@@ -369,13 +371,13 @@ class Settings:
         self.user_email = self.ConfigSectionMap("User")['email']
 
         self.line_numbers = self.ConfigSectionMap("Editor")['line_numbers']
+        self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
+       
         self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
-
         self.auto_indent = self.ConfigSectionMap("Editor")['auto_indent']
         self.tab_width = self.ConfigSectionMap("Editor")['tab_width']
         self.indent_width = self.ConfigSectionMap("Editor")['indent_width']
         self.tabs_to_spaces = self.ConfigSectionMap("Editor")['tabs_to_spaces']
-        self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
         self.editor_font = self.ConfigSectionMap("Editor")['editor_font']
 
     def write_config(self):
