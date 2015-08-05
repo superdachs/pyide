@@ -10,19 +10,23 @@ class Handler:
     def onSettingsCheckBoxToggled(self, settingsvar):
         setattr(app.settings, settingsvar, not getattr(app.settings, settingsvar))
 
+    def str2bool(string):
+        return string.lower() in ("yes", "1", "true")
+
     def onApplicationSettings(self, *args):
 
         app.settings.load_config()
 
         app.builder.get_object("settings_username").set_text(app.settings.user_name)
         app.builder.get_object("settings_email").set_text(app.settings.user_email)
-        app.builder.get_object("settings_linenumbers").set_active(app.settings.line_numbers)
-        app.builder.get_object("settings_showrightmargin").set_active(app.settings.show_right_margin)
-        app.builder.get_object("settings_autoindent").set_active(app.settings.auto_indent)
-        app.builder.get_object("settings_tabs_to_spaces").set_active(app.settings.tabs_to_spaces)
+        app.builder.get_object("settings_linenumbers").set_active(Handler.str2bool(app.settings.line_numbers))
+        app.builder.get_object("settings_showrightmargin").set_active(Handler.str2bool(app.settings.show_right_margin))
+        app.builder.get_object("settings_autoindent").set_active(Handler.str2bool(app.settings.auto_indent))
+        app.builder.get_object("settings_tabs_to_spaces").set_active(Handler.str2bool(app.settings.tabs_to_spaces))
         app.builder.get_object("settings_linenumbers").connect('toggled', Handler.onSettingsCheckBoxToggled, "line_numbers")
         app.builder.get_object("settings_showrightmargin").connect('toggled', Handler.onSettingsCheckBoxToggled, "show_right_margin")
         app.builder.get_object("settings_autoindent").connect('toggled', Handler.onSettingsCheckBoxToggled, "auto_indent")
+        app.builder.get_object("settings_tabs_to_spaces").connect('toggled', Handler.onSettingsCheckBoxToggled, "tabs_to_spaces")
 
         app.builder.get_object("settings_window").show_all()
 
@@ -42,9 +46,7 @@ class Handler:
         app.settings.write_config()
 
         for f in app.openfiles:
-            app.settings.apply(f[2])
-
-        #TODO: apply settings
+            app.settings.apply(f[2].get_children()[0])
 
         app.builder.get_object("settings_window").hide()
 
@@ -113,12 +115,17 @@ class Handler:
         hbox.show_all()
 
         sview = GtkSource.View()
+        sview.set_buffer(buffer)
 
         #Settings
+        try:
+            app.settings.load_config()
+        except:
+            app.settings.load_standard_config()
         app.settings.apply(sview)
         #Settings
 
-        sview.set_buffer(buffer)
+
         swindow = Gtk.ScrolledWindow()
         swindow.add(sview)
         notebook = app.builder.get_object("notebook1")
@@ -352,12 +359,11 @@ class Settings:
 
     def __init__(self, *args):
         self.Config = configparser.ConfigParser()
-        self.load_standard_config()
-
-        if os.path.isfile(os.path.join(os.path.expanduser("~"), '.pyide.conf')):
+        try:
             self.load_config()
-
-        self.write_config()
+        except:
+            self.load_standard_config()
+            self.write_config()
 
     def ConfigSectionMap(self, section):
         dict1 = {}
@@ -382,7 +388,7 @@ class Settings:
 
         self.line_numbers = self.ConfigSectionMap("Editor")['line_numbers']
         self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
-       
+
         self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
         self.auto_indent = self.ConfigSectionMap("Editor")['auto_indent']
         self.tab_width = self.ConfigSectionMap("Editor")['tab_width']
@@ -452,6 +458,10 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
 
         self.settings = Settings()
+        try:
+            self.settings.load_config()
+        except:
+            self.settings.load_standard_config()
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
         FsTree.populateFileSystemTreeStore(fileSystemTreeStore, os.path.expanduser("~"))
