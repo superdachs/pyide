@@ -2,7 +2,7 @@
 
 from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
-import os, stat, time, configparser
+import os, stat, time, configparser, jedi
 
 
 class Handler:
@@ -55,7 +55,18 @@ class Handler:
  ##############################################################################
 
     def onShowCompletion(self, buffer):
-        print("CODE COMPLETION")
+        startiter, enditer = buffer.get_bounds()
+        mark = buffer.get_insert()
+        cpostiter = buffer.get_iter_at_mark(mark)
+        source = buffer.get_text(startiter, enditer, include_hidden_chars=False)
+
+        print(cpostiter.get_line() + 1)
+        print(cpostiter.get_line_offset())
+
+        script = jedi.Script(source, cpostiter.get_line() + 1, cpostiter.get_line_offset(), 'example.py')
+        completions = script.completions()
+        for completion in completions:
+            print(completion.name)
 
 
 ########################################################
