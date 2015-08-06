@@ -449,6 +449,8 @@ class Settings:
 
 class Pyide:
 
+    
+
     openfiles = []
     # fs tree store from http://stackoverflow.com/questions/23433819/creating-a-simple-file-browser-using-python-and-gtktreeview
     def __init__(self, *args):
@@ -457,11 +459,15 @@ class Pyide:
         GObject.type_register(GtkSource.View)
         self.builder.add_from_file("pyide.glade")
 
-        self.settings = Settings()
-        try:
-            self.settings.load_config()
-        except:
-            self.settings.load_standard_config()
+
+        self.config = configparser.ConfigParser()
+
+
+#        self.settings = Settings()
+#        try:
+#            self.settings.load_config()
+#        except:
+#            self.settings.load_standard_config()
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
         FsTree.populateFileSystemTreeStore(fileSystemTreeStore, os.path.expanduser("~"))
