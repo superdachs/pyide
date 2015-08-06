@@ -188,7 +188,6 @@
     <property name="title" translatable="yes">PyIDE</property>
     <property name="default_width">1280</property>
     <property name="default_height">800</property>
-    <property name="hide_titlebar_when_maximized">True</property>
     <property name="has_resize_grip">True</property>
     <signal name="delete-event" handler="onDeleteWindow" swapped="no"/>
     <child>

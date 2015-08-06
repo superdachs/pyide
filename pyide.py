@@ -54,7 +54,9 @@ class Handler:
  #             CODE COMPLETION                                                #
  ##############################################################################
 
-    def onShowCompletion(self, buffer):
+    def onShowCompletion(self, sview):
+        buffer = sview.get_buffer()
+        
         startiter, enditer = buffer.get_bounds()
         mark = buffer.get_insert()
         cpostiter = buffer.get_iter_at_mark(mark)
@@ -64,14 +66,30 @@ class Handler:
         completions = script.completions()
 
         if completions != []:
-            Handler.openCompletions(completions)
+            Handler.openCompletions(completions, sview, cpostiter)
             
             
-    def openCompletions(completions):
+    def openCompletions(completions, sview, cpostiter):
         for c in completions:
             print(c.name)
+            
+        iter_loc = sview.get_iter_location(cpostiter)
+        win_loc = sview.buffer_to_window_coords(
+            Gtk.TextWindowType.WIDGET, iter_loc.x, iter_loc.y)
         
-
+        win = sview.get_window (Gtk.TextWindowType.WIDGET)    
+        view_pos = win.get_position()
+        
+        x = win_loc[0] + view_pos[0]
+        y = win_loc[1] + view_pos[1] + iter_loc.height
+        top_x, top_y = sview.get_toplevel().get_position()
+        
+        
+        print(top_x + x)
+        print(top_y + y)
+        
+            
+   
 ########################################################
 
     def onCopy(self, *args):
@@ -179,7 +197,7 @@ class Handler:
                 buffer.set_highlight_syntax(True)
                 buffer.set_language(lan)
                 if lan.get_name() == 'Python':
-                    swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, buffer)
+                    swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, swindow.get_children()[0])
             else:
                 buffer.set_highlight_syntax(False)
             buffer.set_highlight_matching_brackets(True)
