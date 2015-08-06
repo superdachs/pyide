@@ -1,6 +1,8 @@
 # pyide
 GTK based IDE for python
 
+http://superdachs.github.io/pyide/
+
 # features
 In this early stage the editor only gets basic functions.
 
