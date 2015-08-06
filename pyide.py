@@ -50,6 +50,15 @@ class Handler:
 
         app.builder.get_object("settings_window").hide()
 
+ ##############################################################################
+ #             CODE COMPLETION                                                #
+ ##############################################################################
+
+    def onShowCompletion(self, buffer):
+        print("CODE COMPLETION")
+
+
+########################################################
 
     def onCopy(self, *args):
         Handler.getCurrentBuffer().copy_clipboard(app.clipboard)
@@ -94,11 +103,14 @@ class Handler:
         lanm = GtkSource.LanguageManager()
         lan = lanm.get_language('python')
         buffer.set_language(lan)
+
         buffer.set_highlight_syntax(True)
         buffer.set_highlight_matching_brackets (True)
         buffer.set_text("#!/usr/bin/env python")
         buffer.set_modified(False)
         swindow = Handler.create_tab("unnamed", buffer)
+        #Keyboard shortcut
+        swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, buffer)
         app.openfiles.append([None, buffer, swindow])
 
     def create_tab(path, buffer):
@@ -148,14 +160,16 @@ class Handler:
             # syntax highlighting
             lman = GtkSource.LanguageManager()
             lan = lman.guess_language(path)
+            swindow = Handler.create_tab(path, buffer)
             if lan:
                 buffer.set_highlight_syntax(True)
                 buffer.set_language(lan)
+                if lan.get_name() == 'Python':
+                    swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, buffer)
             else:
                 buffer.set_highlight_syntax(False)
             buffer.set_highlight_matching_brackets(True)
 
-            swindow = Handler.create_tab(path, buffer)
             app.openfiles.append([path, buffer, swindow])
 
     def askForSave(buffer):
@@ -457,6 +471,8 @@ class Pyide:
         GObject.type_register(GtkSource.View)
         self.builder.add_from_file("pyide.glade")
 
+        self.my_accelerators = Gtk.AccelGroup()
+
         self.settings = Settings()
         try:
             self.settings.load_config()
@@ -481,12 +497,18 @@ class Pyide:
 
         self.builder.connect_signals(Handler())
 
-
-
-
+    def add_accelerator(self, widget, accelerator, signal="activate"):
+        if accelerator is not None:
+            key, mod = Gtk.accelerator_parse(accelerator)
+            widget.add_accelerator(signal, self.my_accelerators, key, mod, Gtk.AccelFlags.VISIBLE)
+            print("The accelerator is well added with the signal " + signal)
 
     def run(self):
         window = self.builder.get_object("window1")
+
+
+        window.add_accel_group(self.my_accelerators)
+
         window.show_all()
         Gtk.main()
 
