@@ -60,14 +60,17 @@ class Handler:
         cpostiter = buffer.get_iter_at_mark(mark)
         source = buffer.get_text(startiter, enditer, include_hidden_chars=False)
 
-        print(cpostiter.get_line() + 1)
-        print(cpostiter.get_line_offset())
-
         script = jedi.Script(source, cpostiter.get_line() + 1, cpostiter.get_line_offset(), 'example.py')
         completions = script.completions()
-        for completion in completions:
-            print(completion.name)
 
+        if completions != []:
+            Handler.openCompletions(completions)
+            
+            
+    def openCompletions(completions):
+        for c in completions:
+            print(c.name)
+        
 
 ########################################################
 
@@ -521,6 +524,7 @@ class Pyide:
         window.add_accel_group(self.my_accelerators)
 
         window.show_all()
+        Handler.openfile("./pyide.py")
         Gtk.main()
 
 if __name__ == "__main__":
