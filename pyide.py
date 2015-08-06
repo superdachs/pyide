@@ -14,7 +14,7 @@ class Handler:
         return string.lower() in ("yes", "1", "true")
 
     def onApplicationSettings(self, *args):
-
+        return
         app.settings.load_config()
 
         app.builder.get_object("settings_username").set_text(app.settings.user_name)
