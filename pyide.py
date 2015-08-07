@@ -376,7 +376,7 @@ class FsTree:
         # get the full path of the position
         newPath = treeStore.get_value(treeIter, 2)
         # populate the subtree on curent position
-        Handler.populateFileSystemTreeStore(treeStore, newPath, treeIter)
+        FsTree.populateFileSystemTreeStore(treeStore, newPath, treeIter)
         # remove the first child (dummy node)
         treeStore.remove(treeStore.iter_children(treeIter))
 
