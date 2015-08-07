@@ -7,6 +7,10 @@ import os, stat, time, configparser, jedi
 
 class Handler:
 
+#########################
+# Settings window       #
+#########################
+
     def onSettingsCheckBoxToggled(self, settingsvar):
         setattr(app.settings, settingsvar, not getattr(app.settings, settingsvar))
 
@@ -14,52 +18,26 @@ class Handler:
         return string.lower() in ("yes", "1", "true")
 
     def onApplicationSettings(self, *args):
-
-        app.settings.load_config()
-
-        app.builder.get_object("settings_username").set_text(app.settings.user_name)
-        app.builder.get_object("settings_email").set_text(app.settings.user_email)
-        app.builder.get_object("settings_linenumbers").set_active(Handler.str2bool(app.settings.line_numbers))
-        app.builder.get_object("settings_showrightmargin").set_active(Handler.str2bool(app.settings.show_right_margin))
-        app.builder.get_object("settings_autoindent").set_active(Handler.str2bool(app.settings.auto_indent))
-        app.builder.get_object("settings_tabs_to_spaces").set_active(Handler.str2bool(app.settings.tabs_to_spaces))
-        app.builder.get_object("settings_linenumbers").connect('toggled', Handler.onSettingsCheckBoxToggled, "line_numbers")
-        app.builder.get_object("settings_showrightmargin").connect('toggled', Handler.onSettingsCheckBoxToggled, "show_right_margin")
-        app.builder.get_object("settings_autoindent").connect('toggled', Handler.onSettingsCheckBoxToggled, "auto_indent")
-        app.builder.get_object("settings_tabs_to_spaces").connect('toggled', Handler.onSettingsCheckBoxToggled, "tabs_to_spaces")
-
         app.builder.get_object("settings_window").show_all()
 
     def onSettingsWindowCancel(self, *args):
         app.builder.get_object("settings_window").hide()
-        try:
-            app.settings.load_config()
-        except:
-            app.settings.load_standard_config()
         return True
 
-
     def onSettingsWindowSave(self, settings):
-        app.settings.user_name = app.builder.get_object("settings_username").get_text()
-        app.settings.user_email = app.builder.get_object("settings_email").get_text()
-
-        app.settings.write_config()
-
-        for f in app.openfiles:
-            app.settings.apply(f[2].get_children()[0])
-
         app.builder.get_object("settings_window").hide()
+        return True
 
- ##############################################################################
- #             CODE COMPLETION                                                #
- ##############################################################################
+ ####################################
+ #             CODE COMPLETION      #
+ ####################################
 
     def onShowCompletion(self, sview):
         buffer = sview.get_buffer()
         
         startiter, enditer = buffer.get_bounds()
         mark = buffer.get_insert()
-        cpostiter = buffer.get_iter_at_mark(mark)
+        cpostiter = buffer.get_iter_at_mark(mark).copy()
         source = buffer.get_text(startiter, enditer, include_hidden_chars=False)
 
         script = jedi.Script(source, cpostiter.get_line() + 1, cpostiter.get_line_offset(), 'example.py')
@@ -78,7 +56,14 @@ class Handler:
             Gtk.TextWindowType.WIDGET, iter_loc.x, iter_loc.y)
         
         win = sview.get_window (Gtk.TextWindowType.WIDGET)    
-        view_pos = win.get_position()
+        view_pos = win.get_toplevel().get_position()
+        
+        # get the sidebar width
+        print(type(sview.get_toplevel()))
+        
+        print(view_pos[0])
+        print(view_pos[1])
+        
         
         x = win_loc[0] + view_pos[0]
         y = win_loc[1] + view_pos[1] + iter_loc.height
@@ -87,7 +72,21 @@ class Handler:
         
         print(top_x + x)
         print(top_y + y)
-        
+        try:
+            ccwin = Gtk.Window()
+            ccwin.set_keep_above(True)
+            ccwin.set_decorated(False)
+            helplabel = Gtk.Label("TEST")
+            ccwin.add(helplabel)
+            ccwin.move(top_x + x, top_y + y)
+            ccwin.connect("focus-out-event", Handler.onCCWinDestroy, ccwin)
+            ccwin.show_all()
+            
+        except Exception as e:
+            print(e)
+            
+    def onCCWinDestroy(self, evt, window):
+            window.destroy()
             
    
 ########################################################
@@ -161,14 +160,26 @@ class Handler:
         sview = GtkSource.View()
         sview.set_buffer(buffer)
 
-        #Settings
-        try:
-            app.settings.load_config()
-        except:
-            app.settings.load_standard_config()
-        app.settings.apply(sview)
-        #Settings
+        # make settings
+        sview.set_show_line_numbers(True)
+        sview.set_auto_indent(True)
+        sview.set_tab_width(4)
+        sview.set_indent_width(4)
+        sview.set_insert_spaces_instead_of_tabs(True)
+        sview.set_right_margin_position(80)
+        sview.set_show_right_margin(True)
+        sview.modify_font(Pango.FontDescription('Dejavu Sans Mono'))
 
+#        try:
+#            bg_color = Gdk.RGBA()
+#            Gdk.RGBA.parse(bg_color, "#111111")
+#            sview.override_background_color(Gtk.StateType.NORMAL, bg_color)
+#            fg_color = Gdk.RGBA()
+#            Gdk.RGBA.parse(fg_color, "#DDDDDD")
+#            sview.override_color(Gtk.StateType.NORMAL, fg_color)
+#        except Exception as e:
+#            print(e)
+#            pass
 
         swindow = Gtk.ScrolledWindow()
         swindow.add(sview)
@@ -401,98 +412,6 @@ class FsTree:
         if not os.path.isdir(str(fspath)):
             Handler.openfile(str(fspath))
 
-class Settings:
-
-    def __init__(self, *args):
-        self.Config = configparser.ConfigParser()
-        try:
-            self.load_config()
-        except:
-            self.load_standard_config()
-            self.write_config()
-
-    def ConfigSectionMap(self, section):
-        dict1 = {}
-        options = self.Config.options(section)
-        for option in options:
-            try:
-                dict1[option] = self.Config.get(section, option)
-                if dict1[option] == -1:
-                    print("skip: %s" % option)
-            except:
-                print("exception on %s!" % option)
-                dict1[option] = None
-
-        return dict1
-
-    def load_config(self):
-        print("load config...")
-        self.Config.read(os.path.join(os.path.expanduser("~"), '.pyide.conf'))
-
-        self.user_name = self.ConfigSectionMap("User")['name']
-        self.user_email = self.ConfigSectionMap("User")['email']
-
-        self.line_numbers = self.ConfigSectionMap("Editor")['line_numbers']
-        self.show_right_margin = self.ConfigSectionMap("Editor")['show_right_margin']
-
-        self.right_margin = self.ConfigSectionMap("Editor")['right_margin']
-        self.auto_indent = self.ConfigSectionMap("Editor")['auto_indent']
-        self.tab_width = self.ConfigSectionMap("Editor")['tab_width']
-        self.indent_width = self.ConfigSectionMap("Editor")['indent_width']
-        self.tabs_to_spaces = self.ConfigSectionMap("Editor")['tabs_to_spaces']
-        self.editor_font = self.ConfigSectionMap("Editor")['editor_font']
-
-    def write_config(self):
-        print("write_config...")
-        cfgfile = open(os.path.join(os.path.expanduser("~"), '.pyide.conf'), 'w')
-        try:
-            self.Config.add_section('Editor')
-        except:
-            pass
-        try:
-            self.Config.add_section('User')
-        except:
-            pass
-
-        self.Config.set('User', 'name', str(self.user_name))
-        self.Config.set('User', 'email', str(self.user_email))
-
-
-        self.Config.set('Editor', 'line_numbers', str(self.line_numbers))
-        self.Config.set('Editor', 'auto_indent', str(self.auto_indent))
-        self.Config.set('Editor', 'tab_width', str(self.tab_width))
-        self.Config.set('Editor', 'indent_width', str(self.indent_width))
-        self.Config.set('Editor', 'tabs_to_spaces', str(self.tabs_to_spaces))
-        self.Config.set('Editor', 'right_margin', str(self.right_margin))
-        self.Config.set('Editor', 'show_right_margin', str(self.show_right_margin))
-        self.Config.set('Editor', 'editor_font', str(self.editor_font))
-        self.Config.write(cfgfile)
-        cfgfile.close()
-
-    def load_standard_config(self):
-
-        self.user_name = "Max Mustermann"
-        self.user_email = "max@mustermann.de"
-
-        self.line_numbers = True
-        self.auto_indent = True
-        self.tab_width = 4
-        self.indent_width = 4
-        self.tabs_to_spaces = True
-        self.right_margin = 80
-        self.show_right_margin = True
-        self.editor_font = 'Dejavu Sans Mono'
-
-    def apply(self, sview):
-        sview.set_show_line_numbers(self.line_numbers)
-        sview.set_auto_indent(self.auto_indent)
-        sview.set_tab_width(int(self.tab_width))
-        sview.set_indent_width(int(self.indent_width))
-        sview.set_insert_spaces_instead_of_tabs(self.tabs_to_spaces)
-        sview.set_right_margin_position(int(self.right_margin))
-        sview.set_show_right_margin(self.show_right_margin)
-        sview.modify_font(Pango.FontDescription(self.editor_font))
-
 class Pyide:
 
     openfiles = []
@@ -504,12 +423,6 @@ class Pyide:
         self.builder.add_from_file("pyide.glade")
 
         self.my_accelerators = Gtk.AccelGroup()
-
-        self.settings = Settings()
-        try:
-            self.settings.load_config()
-        except:
-            self.settings.load_standard_config()
 
         fileSystemTreeStore = Gtk.TreeStore(str, Pixbuf, str)
         FsTree.populateFileSystemTreeStore(fileSystemTreeStore, os.path.expanduser("~"))
