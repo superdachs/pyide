@@ -48,8 +48,6 @@ class Handler:
             
             
     def openCompletions(completions, sview, cpostiter):
-        for c in completions:
-            print(c.name)
             
         iter_loc = sview.get_iter_location(cpostiter)
         win_loc = sview.buffer_to_window_coords(
@@ -58,27 +56,21 @@ class Handler:
         win = sview.get_window (Gtk.TextWindowType.WIDGET)    
         view_pos = win.get_toplevel().get_position()
         
-        # get the sidebar width
-        print(type(sview.get_toplevel()))
+        x = win_loc[0] + view_pos[0] + 180
+        y = win_loc[1] + view_pos[1] + 130
         
-        print(view_pos[0])
-        print(view_pos[1])
-        
-        
-        x = win_loc[0] + view_pos[0]
-        y = win_loc[1] + view_pos[1] + iter_loc.height
-        top_x, top_y = sview.get_toplevel().get_position()
-        
-        
-        print(top_x + x)
-        print(top_y + y)
         try:
             ccwin = Gtk.Window()
             ccwin.set_keep_above(True)
             ccwin.set_decorated(False)
-            helplabel = Gtk.Label("TEST")
-            ccwin.add(helplabel)
-            ccwin.move(top_x + x, top_y + y)
+            vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            swin = Gtk.ScrolledWindow()
+            for c in completions:
+                vbox.pack_start(Gtk.Label(c.name), True, True, 0)
+            swin.add(vbox)
+            ccwin.add(swin)
+            ccwin.set_size_request(400, 200)
+            ccwin.move(x, y)
             ccwin.connect("focus-out-event", Handler.onCCWinDestroy, ccwin)
             ccwin.show_all()
             
