@@ -63,14 +63,30 @@ class Handler:
             ccwin.set_keep_above(True)
             ccwin.set_decorated(False)
             vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             swin = Gtk.ScrolledWindow()
+            
+            title = Gtk.Label("Title")
+            descr = Gtk.Label("Descr")
+            
+            vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            vbox2.pack_start(title, True, True, 0)
+            vbox2.pack_start(descr, True, True, 0)
+            
             for c in completions:
                 b = Gtk.Button(c.name)
                 b.connect("clicked", Handler.onComplete, c, ccwin, sview.get_buffer())
+                b.connect("focus-in-event", Handler.onFocusCompletion, c, title, descr)
+                b.connect("focus-out-event", Handler.onUnFocusCompletion)
                 vbox.pack_start(b, True, True, 0)
+            
+            hbox.pack_start(swin, True, True, 0)
             swin.add(vbox)
-            ccwin.add(swin)
-            ccwin.set_size_request(400, 200)
+            
+            hbox.pack_start(vbox2, True, True, 0)
+            
+            ccwin.add(hbox)
+            ccwin.set_size_request(800, 400)
             ccwin.move(x, y)
             ccwin.connect("focus-out-event", Handler.onCCWinDestroy, ccwin)
             ccwin.connect("key-release-event", Handler.onCCWinEsc)
@@ -78,13 +94,20 @@ class Handler:
             
         except Exception as e:
             print(e)
+    
+    def onFocusCompletion(self, evt, completion, title, descr):
+        title.set_text(completion.description)
+        descr.set_text(completion.doc)
+        
+    def onUnFocusCompletion(self, evt, data=None):
+        print("P")
+                    
            
     def onCCWinEsc(self, event, data=None):
         if event.keyval == Gdk.KEY_Escape:
             self.destroy()
            
     def onComplete(self, completion, win, buf):
-        print(completion.complete)
         buf.insert_at_cursor(completion.complete)
         win.destroy()
             
