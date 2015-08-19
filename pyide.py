@@ -73,11 +73,16 @@ class Handler:
             ccwin.set_size_request(400, 200)
             ccwin.move(x, y)
             ccwin.connect("focus-out-event", Handler.onCCWinDestroy, ccwin)
+            ccwin.connect("key-release-event", Handler.onCCWinEsc)
             ccwin.show_all()
             
         except Exception as e:
             print(e)
-            
+           
+    def onCCWinEsc(self, event, data=None):
+        if event.keyval == Gdk.KEY_Escape:
+            self.destroy()
+           
     def onComplete(self, completion, win, buf):
         print(completion.complete)
         buf.insert_at_cursor(completion.complete)
