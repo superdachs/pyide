@@ -46,7 +46,6 @@ class Handler:
         if completions != []:
             Handler.openCompletions(completions, sview, cpostiter)
             
-            
     def openCompletions(completions, sview, cpostiter):
             
         iter_loc = sview.get_iter_location(cpostiter)
@@ -66,7 +65,9 @@ class Handler:
             vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             swin = Gtk.ScrolledWindow()
             for c in completions:
-                vbox.pack_start(Gtk.Label(c.name), True, True, 0)
+                b = Gtk.Button(c.name)
+                b.connect("clicked", Handler.onComplete, c, ccwin, sview.get_buffer())
+                vbox.pack_start(b, True, True, 0)
             swin.add(vbox)
             ccwin.add(swin)
             ccwin.set_size_request(400, 200)
@@ -77,8 +78,13 @@ class Handler:
         except Exception as e:
             print(e)
             
+    def onComplete(self, completion, win, buf):
+        print(completion.complete)
+        buf.insert_at_cursor(completion.complete)
+        win.destroy()
+            
     def onCCWinDestroy(self, evt, window):
-            window.destroy()
+        window.destroy()
             
    
 ########################################################
