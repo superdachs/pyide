@@ -6,27 +6,6 @@ import os, stat, time, configparser, jedi
 
 class Handler:
 
-#########################
-# Settings window       #
-#########################
-
-    def onSettingsCheckBoxToggled(self, settingsvar):
-        setattr(app.settings, settingsvar, not getattr(app.settings, settingsvar))
-
-    def str2bool(string):
-        return string.lower() in ("yes", "1", "true")
-
-    def onApplicationSettings(self, *args):
-        app.builder.get_object("settings_window").show_all()
-
-    def onSettingsWindowCancel(self, *args):
-        app.builder.get_object("settings_window").hide()
-        return True
-
-    def onSettingsWindowSave(self, settings):
-        app.builder.get_object("settings_window").hide()
-        return True
-
  ####################################
  #             CODE COMPLETION      #
  ####################################
