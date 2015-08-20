@@ -4,7 +4,6 @@ from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
 import os, stat, time, configparser, jedi
 
-    
 class Handler:
 
 #########################
@@ -34,7 +33,7 @@ class Handler:
 
     def onShowCompletion(self, sview):
         buffer = sview.get_buffer()
-        
+
         startiter, enditer = buffer.get_bounds()
         mark = buffer.get_insert()
         cpostiter = buffer.get_iter_at_mark(mark).copy()
@@ -45,18 +44,18 @@ class Handler:
 
         if completions != []:
             Handler.openCompletions(completions, sview, cpostiter)
-            
+
     def openCompletions(completions, sview, cpostiter):
         iter_loc = sview.get_iter_location(cpostiter)
         win_loc = sview.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, iter_loc.x, iter_loc.y)
-        
-        win = sview.get_window (Gtk.TextWindowType.WIDGET)    
+
+        win = sview.get_window (Gtk.TextWindowType.WIDGET)
         view_pos = win.get_toplevel().get_position()
-        
+
         x = win_loc[0] + view_pos[0] + 180
         y = win_loc[1] + view_pos[1] + 130
-        
+
         try:
             ccwin = Gtk.Window()
             ccwin.set_keep_above(True)
@@ -64,56 +63,56 @@ class Handler:
             vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
             swin = Gtk.ScrolledWindow()
-            
+
             title = Gtk.Label("Title")
             descr = Gtk.Label("Descr")
-            
+
             vbox2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             vbox2.pack_start(title, True, True, 0)
             vbox2.pack_start(descr, True, True, 0)
-            
+
             for c in completions:
                 b = Gtk.Button(c.name)
                 b.connect("clicked", Handler.onComplete, c, ccwin, sview.get_buffer())
                 b.connect("focus-in-event", Handler.onFocusCompletion, c, title, descr)
                 b.connect("focus-out-event", Handler.onUnFocusCompletion)
                 vbox.pack_start(b, True, True, 0)
-            
+
             hbox.pack_start(swin, True, True, 0)
             swin.add(vbox)
-            
+
             hbox.pack_start(vbox2, True, True, 0)
-            
+
             ccwin.add(hbox)
             ccwin.set_size_request(800, 400)
             ccwin.move(x, y)
             ccwin.connect("focus-out-event", Handler.onCCWinDestroy, ccwin)
             ccwin.connect("key-release-event", Handler.onCCWinEsc)
             ccwin.show_all()
-            
+
         except Exception as e:
             print(e)
-    
+
     def onFocusCompletion(self, evt, completion, title, descr):
         title.set_text(completion.description)
         descr.set_text(completion.doc)
-        
+
     def onUnFocusCompletion(self, evt, data=None):
         print("P")
-                    
-           
+
+
     def onCCWinEsc(self, event, data=None):
         if event.keyval == Gdk.KEY_Escape:
             self.destroy()
-           
+
     def onComplete(self, completion, win, buf):
         buf.insert_at_cursor(completion.complete)
         win.destroy()
-            
+
     def onCCWinDestroy(self, evt, window):
         window.destroy()
-            
-   
+
+
 ########################################################
 
     def onCopy(self, *args):
