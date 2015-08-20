@@ -4,7 +4,7 @@ from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
 import os, stat, time, configparser, jedi
 
-
+    
 class Handler:
 
 #########################
@@ -50,7 +50,7 @@ class Handler:
     def openCompletions(completions, sview, cpostiter):
         for c in completions:
             print(c.name)
-            
+
         iter_loc = sview.get_iter_location(cpostiter)
         win_loc = sview.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, iter_loc.x, iter_loc.y)
