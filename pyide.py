@@ -2,15 +2,13 @@
 
 from gi.repository import Gtk, Gdk, GtkSource, GObject, Vte, GLib, Pango
 from gi.repository.GdkPixbuf import Pixbuf
-import os, stat, time, configparser, jedi
+import os
+import stat
+import time
+import jedi
+
 
 class Handler:
-
- # test2
-
- ####################################
- #             CODE COMPLETION      #
- ####################################
 
     def onShowCompletion(self, sview):
         buffer = sview.get_buffer()
@@ -18,9 +16,11 @@ class Handler:
         startiter, enditer = buffer.get_bounds()
         mark = buffer.get_insert()
         cpostiter = buffer.get_iter_at_mark(mark).copy()
-        source = buffer.get_text(startiter, enditer, include_hidden_chars=False)
+        source = buffer.get_text(startiter, enditer,
+                                 include_hidden_chars=False)
 
-        script = jedi.Script(source, cpostiter.get_line() + 1, cpostiter.get_line_offset(), 'example.py')
+        script = jedi.Script(source, cpostiter.get_line() + 1,
+                             cpostiter.get_line_offset(), 'example.py')
         completions = script.completions()
 
         if completions != []:
@@ -31,7 +31,7 @@ class Handler:
         win_loc = sview.buffer_to_window_coords(
             Gtk.TextWindowType.WIDGET, iter_loc.x, iter_loc.y)
 
-        win = sview.get_window (Gtk.TextWindowType.WIDGET)
+        win = sview.get_window(Gtk.TextWindowType.WIDGET)
         view_pos = win.get_toplevel().get_position()
 
         x = win_loc[0] + view_pos[0] + 180
@@ -54,8 +54,10 @@ class Handler:
 
             for c in completions:
                 b = Gtk.Button(c.name)
-                b.connect("clicked", Handler.onComplete, c, ccwin, sview.get_buffer())
-                b.connect("focus-in-event", Handler.onFocusCompletion, c, title, descr)
+                b.connect("clicked", Handler.onComplete,
+                          c, ccwin, sview.get_buffer())
+                b.connect("focus-in-event", Handler.onFocusCompletion,
+                          c, title, descr)
                 b.connect("focus-out-event", Handler.onUnFocusCompletion)
                 vbox.pack_start(b, True, True, 0)
 
@@ -107,7 +109,8 @@ class Handler:
 
     def onModified(self, label, buffer):
         if buffer.get_modified():
-            label.set_markup("<span foreground='#ff8000'>%s</span>" % label.get_text())
+            label.set_markup("<span foreground='#ff8000'>%s</span>"
+                             % label.get_text())
 
     def onDeleteWindow(self, *args):
         for i in app.openfiles:
@@ -126,9 +129,13 @@ class Handler:
         app.builder.get_object("window1").unfullscreen()
 
     def onOpen(self, *args):
-        dialog = Gtk.FileChooserDialog("open file", app.builder.get_object("window1"),
-            Gtk.FileChooserAction.OPEN,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog = Gtk.FileChooserDialog("open file",
+                                       app.builder.get_object("window1"),
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
+                                        Gtk.STOCK_OPEN,
+                                        Gtk.ResponseType.OK))
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             Handler.openfile(dialog.get_filename())
@@ -141,12 +148,12 @@ class Handler:
         buffer.set_language(lan)
 
         buffer.set_highlight_syntax(True)
-        buffer.set_highlight_matching_brackets (True)
+        buffer.set_highlight_matching_brackets(True)
         buffer.set_text("#!/usr/bin/env python")
         buffer.set_modified(False)
         swindow = Handler.create_tab("unnamed", buffer)
-        #Keyboard shortcut
-        swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, buffer)
+        swindow.get_children()[0].connect("show-completion",
+                                          Handler.onShowCompletion, buffer)
         app.openfiles.append([None, buffer, swindow])
 
     def create_tab(path, buffer):
@@ -201,7 +208,7 @@ class Handler:
             if of[0] != None:
                 if path in of[0]:
                     return
-        with open (path, "r") as loadedfile:
+        with open(path, "r") as loadedfile:
             buffer = GtkSource.Buffer()
             buffer.set_text(loadedfile.read())
             buffer.set_modified(False)
@@ -213,7 +220,9 @@ class Handler:
                 buffer.set_highlight_syntax(True)
                 buffer.set_language(lan)
                 if lan.get_name() == 'Python':
-                    swindow.get_children()[0].connect("show-completion", Handler.onShowCompletion, swindow.get_children()[0])
+                    swindow.get_children()[0].connect("show-completion",
+                                                      Handler.onShowCompletion,
+                                                      swindow.get_children()[0])
             else:
                 buffer.set_highlight_syntax(False)
             buffer.set_highlight_matching_brackets(True)
