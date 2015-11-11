@@ -1,0 +1,3 @@
+let l:bm_file_version = 1
+let l:bm_sessions = {'default': {'/home/superdachs/devel/pyide/pyide.py': [{'sign_idx': 9500, 'line_nr': 19, 'content': '        mark = buffer.get_insert()', 'annotation': 'testbookmark'},],}}
+let l:bm_current_session = 'default'
